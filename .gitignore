@@ -5,3 +5,4 @@ server/volumes/storage/
 server/volumes/piston/
 content/.cache/
 __pycache__/
+server/.test-user
