@@ -1,0 +1,6 @@
+server/.env
+server/.env.test
+server/volumes/db/data/
+server/volumes/storage/
+server/volumes/piston/
+content/.cache/
