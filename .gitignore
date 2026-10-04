@@ -4,3 +4,4 @@ server/volumes/db/data/
 server/volumes/storage/
 server/volumes/piston/
 content/.cache/
+__pycache__/
