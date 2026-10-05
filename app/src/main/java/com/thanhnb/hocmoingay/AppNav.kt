@@ -25,6 +25,8 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import com.thanhnb.hocmoingay.feature.Placeholder
 import com.thanhnb.hocmoingay.feature.TodayPlaceholder
+import com.thanhnb.hocmoingay.feature.learn.LearnScreen
+import com.thanhnb.hocmoingay.feature.learn.LearnViewModel
 import com.thanhnb.hocmoingay.feature.settings.SettingsScreen
 import com.thanhnb.hocmoingay.feature.settings.SettingsViewModel
 
@@ -69,9 +71,7 @@ fun AppNav(graph: AppGraph) {
             entryProvider = entryProvider {
                 entry<Today> { TodayPlaceholder() }
                 entry<Learn> {
-                    Placeholder("Học", "Danh sách khoá — Task 10") {
-                        Button(onClick = { backStack.add(CourseDetail("python")) }) { Text("Mở thử khoá Python") }
-                    }
+                    LearnScreen(viewModel { LearnViewModel(graph.db.curriculum()) }, onOpenCourse = { backStack.add(CourseDetail(it)) })
                 }
                 entry<Review> { Placeholder("Ôn tập", "Thẻ đến hạn — giai đoạn d") }
                 entry<Profile> {
