@@ -1,0 +1,3 @@
+Nguồn grammar TextMate trong thư mục này
+- python, javascript, typescript, java, go, cpp/c, rust, csharp, sql, shell: microsoft/vscode (extensions/*), MIT — xem LICENSE-vscode.txt. language-configuration.json đã bỏ comment/dấu phẩy thừa (JSONC -> JSON).
+- kotlin: Rosemoe/sora-editor (app/src/main/assets/textmate/kotlin), repo giấy phép LGPL-2.1 — cùng giấy phép với thư viện Sora app đang dùng.

@@ -1,0 +1,14 @@
+{"languages":[
+ {"name":"python","scopeName":"source.python","grammar":"textmate/python/syntaxes/python.tmLanguage.json","languageConfiguration":"textmate/python/language-configuration.json"},
+ {"name":"javascript","scopeName":"source.js","grammar":"textmate/javascript/syntaxes/javascript.tmLanguage.json","languageConfiguration":"textmate/javascript/language-configuration.json"},
+ {"name":"typescript","scopeName":"source.ts","grammar":"textmate/typescript/syntaxes/typescript.tmLanguage.json","languageConfiguration":"textmate/typescript/language-configuration.json"},
+ {"name":"kotlin","scopeName":"source.kotlin","grammar":"textmate/kotlin/syntaxes/Kotlin.tmLanguage","languageConfiguration":"textmate/kotlin/language-configuration.json"},
+ {"name":"java","scopeName":"source.java","grammar":"textmate/java/syntaxes/java.tmLanguage.json","languageConfiguration":"textmate/java/language-configuration.json"},
+ {"name":"go","scopeName":"source.go","grammar":"textmate/go/syntaxes/go.tmLanguage.json","languageConfiguration":"textmate/go/language-configuration.json"},
+ {"name":"c","scopeName":"source.c","grammar":"textmate/cpp/syntaxes/c.tmLanguage.json","languageConfiguration":"textmate/cpp/language-configuration.json"},
+ {"name":"cpp","scopeName":"source.cpp","grammar":"textmate/cpp/syntaxes/cpp.tmLanguage.json","languageConfiguration":"textmate/cpp/language-configuration.json"},
+ {"name":"rust","scopeName":"source.rust","grammar":"textmate/rust/syntaxes/rust.tmLanguage.json","languageConfiguration":"textmate/rust/language-configuration.json"},
+ {"name":"csharp","scopeName":"source.cs","grammar":"textmate/csharp/syntaxes/csharp.tmLanguage.json","languageConfiguration":"textmate/csharp/language-configuration.json"},
+ {"name":"sql","scopeName":"source.sql","grammar":"textmate/sql/syntaxes/sql.tmLanguage.json","languageConfiguration":"textmate/sql/language-configuration.json"},
+ {"name":"shell","scopeName":"source.shell","grammar":"textmate/shell/syntaxes/shell.tmLanguage.json","languageConfiguration":"textmate/shell/language-configuration.json"}
+]}

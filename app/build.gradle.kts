@@ -106,6 +106,9 @@ dependencies {
     implementation("io.github.jan-tennert.supabase:realtime-kt")
     implementation("io.github.jan-tennert.supabase:functions-kt")
     implementation("io.github.jan-tennert.supabase:storage-kt")
+    implementation(platform("io.github.rosemoe:editor-bom:0.24.6"))
+    implementation("io.github.rosemoe:editor")
+    implementation("io.github.rosemoe:language-textmate")
     implementation("io.ktor:ktor-client-okhttp:3.5.1") // khớp ktor 3.5.1 mà supabase-kt 3.8.0 dùng
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
 
