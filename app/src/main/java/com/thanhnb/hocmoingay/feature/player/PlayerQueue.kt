@@ -1,5 +1,6 @@
 package com.thanhnb.hocmoingay.feature.player
 
+
 /**
  * Hàng đợi card của một lượt học. [order] chứa chỉ số card; trả lời sai thì card được thêm lại vào cuối (A4).
  * [results] theo vị trí trong [order]; [firstTry] theo card, chỉ lần trả lời đầu và chỉ card có chấm.

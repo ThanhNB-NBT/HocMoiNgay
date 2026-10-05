@@ -32,7 +32,6 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -49,6 +48,7 @@ import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDe
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
+import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import com.thanhnb.hocmoingay.core.code.LocalAssets
 import com.thanhnb.hocmoingay.core.ui.LocalShared
@@ -58,6 +58,8 @@ import com.thanhnb.hocmoingay.feature.course.CourseScreen
 import com.thanhnb.hocmoingay.feature.course.CourseViewModel
 import com.thanhnb.hocmoingay.feature.learn.LearnScreen
 import com.thanhnb.hocmoingay.feature.learn.LearnViewModel
+import com.thanhnb.hocmoingay.feature.player.PlayerScreen
+import com.thanhnb.hocmoingay.feature.player.PlayerViewModel
 import com.thanhnb.hocmoingay.feature.profile.ProfileScreen
 import com.thanhnb.hocmoingay.feature.settings.SettingsScreen
 import com.thanhnb.hocmoingay.feature.settings.SettingsViewModel
@@ -162,7 +164,13 @@ fun AppNav(graph: AppGraph) {
                                 onOpenLesson = { backStack.add(LessonPlayer(it)) },
                             )
                         }
-                        entry<LessonPlayer> { k -> Placeholder("Trình phát bài", k.lessonId) }
+                        entry<LessonPlayer> { k ->
+                            PlayerScreen(
+                                viewModel { PlayerViewModel(k.lessonId, graph.lessons, graph.code, graph.net.online, graph.db.learner().observeProgress(k.lessonId)) },
+                                k.lessonId, onBack = { backStack.removeLastOrNull() },
+                                onOpenEditor = { key -> backStack.add(CodeEditor(k.lessonId, key)) },
+                            )
+                        }
                         entry<CodeEditor> { k -> Placeholder("Editor", "${k.lessonId}#${k.cardKey}") }
                     },
                 )
