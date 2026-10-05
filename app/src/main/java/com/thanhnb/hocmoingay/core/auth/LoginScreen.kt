@@ -1,25 +1,35 @@
 package com.thanhnb.hocmoingay.core.auth
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -28,14 +38,27 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.autofill.ContentType
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentType
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
+import com.thanhnb.hocmoingay.core.theme.JetBrainsMono
 import com.thanhnb.hocmoingay.core.theme.LocalTrack
+import com.thanhnb.hocmoingay.core.theme.ProvideTrack
+import com.thanhnb.hocmoingay.core.theme.Track
+import com.thanhnb.hocmoingay.core.theme.TrackColors
 import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.auth.providers.builtin.Email
 import kotlinx.coroutines.CancellationException
@@ -73,39 +96,113 @@ fun LoginScreen(vm: LoginViewModel) {
     val ui by vm.ui.collectAsStateWithLifecycle()
     var email by rememberSaveable { mutableStateOf("") }
     var password by remember { mutableStateOf("") } // không lưu mật khẩu vào Bundle
-    val submit = { if (email.isNotBlank() && password.isNotEmpty()) vm.signIn(email, password) }
+    var showPassword by remember { mutableStateOf(false) }
+    val focus = LocalFocusManager.current
+    val ready = email.isNotBlank() && password.isNotEmpty()
+    val submit = {
+        if (ready && !ui.busy) {
+            focus.clearFocus()
+            vm.signIn(email, password)
+        }
+    }
+    val field = RoundedCornerShape(16.dp)
 
-    Box(Modifier.fillMaxSize().safeDrawingPadding().imePadding(), contentAlignment = Alignment.Center) {
-        Column(Modifier.widthIn(max = 480.dp).verticalScroll(rememberScrollState()).padding(horizontal = 24.dp)) {
-            Text("Học Mỗi Ngày", style = MaterialTheme.typography.displaySmall, color = LocalTrack.current.accent)
+    Box(Modifier.fillMaxSize().safeDrawingPadding(), contentAlignment = Alignment.Center) {
+        Column(Modifier.widthIn(max = 440.dp).verticalScroll(rememberScrollState()).padding(24.dp)) {
+            TrackCollage()
+            Spacer(Modifier.height(36.dp))
+            Text("Học Mỗi Ngày", style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(8.dp))
-            Text("Mỗi ngày một chút: lập trình và tiếng Anh cho công việc.",
-                style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                "Lập trình và tiếng Anh cho công việc, mỗi ngày 10–30 phút.",
+                style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
             Spacer(Modifier.height(32.dp))
             OutlinedTextField(
-                value = email, onValueChange = { email = it }, label = { Text("Email") }, singleLine = true,
+                value = email, onValueChange = { email = it }, label = { Text("Email") }, singleLine = true, shape = field,
+                leadingIcon = { Icon(Icons.Filled.Email, null) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().semantics { contentType = ContentType.Username },
             )
             Spacer(Modifier.height(12.dp))
             OutlinedTextField(
-                value = password, onValueChange = { password = it }, label = { Text("Mật khẩu") }, singleLine = true,
-                visualTransformation = PasswordVisualTransformation(),
+                value = password, onValueChange = { password = it }, label = { Text("Mật khẩu") }, singleLine = true, shape = field,
+                leadingIcon = { Icon(Icons.Filled.Lock, null) },
+                trailingIcon = {
+                    TextButton(onClick = { showPassword = !showPassword }) { Text(if (showPassword) "Ẩn" else "Hiện") }
+                },
+                visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(onDone = { submit() }),
-                modifier = Modifier.fillMaxWidth(),
+                // contentType: trình quản lý mật khẩu tự điền được
+                modifier = Modifier.fillMaxWidth().semantics { contentType = ContentType.Password },
             )
             ui.error?.let {
-                Spacer(Modifier.height(12.dp))
-                Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
+                Spacer(Modifier.height(16.dp))
+                Surface(
+                    color = MaterialTheme.colorScheme.errorContainer, contentColor = MaterialTheme.colorScheme.onErrorContainer,
+                    shape = field,
+                ) {
+                    Row(Modifier.fillMaxWidth().padding(14.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Icon(Icons.Filled.Warning, null, Modifier.size(20.dp))
+                        Text(it, style = MaterialTheme.typography.bodyMedium)
+                    }
+                }
             }
             Spacer(Modifier.height(24.dp))
-            Button(onClick = submit, enabled = !ui.busy, modifier = Modifier.fillMaxWidth().height(52.dp)) {
-                if (ui.busy) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp) else Text("Đăng nhập")
+            Button(onClick = submit, enabled = ready && !ui.busy, modifier = Modifier.fillMaxWidth().height(56.dp)) {
+                if (ui.busy) {
+                    CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.dp)
+                } else {
+                    Text("Bắt đầu học", style = MaterialTheme.typography.titleMedium)
+                }
             }
-            Spacer(Modifier.height(16.dp))
-            Text("Tài khoản do quản trị tạo, app không có đăng ký.",
-                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(Modifier.height(20.dp))
+            Text(
+                "Đăng nhập một lần, sau đó học được cả khi offline.\nTài khoản do quản trị tạo, app không có đăng ký.",
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(),
+            )
         }
     }
 }
+
+/** Hai thẻ chồng nhau nói luôn app dạy gì: một đoạn code và một câu tiếng Anh công việc. Chỉ để trang trí. */
+@Composable
+private fun TrackCollage() {
+    Box(Modifier.fillMaxWidth().clearAndSetSemantics {}) {
+        ProvideTrack(Track.CODE) {
+            val t = LocalTrack.current
+            Surface(
+                color = t.container, contentColor = t.onContainer, shape = RoundedCornerShape(24.dp),
+                modifier = Modifier.fillMaxWidth(0.82f).graphicsLayer { rotationZ = -3f },
+            ) {
+                Column(Modifier.padding(18.dp)) {
+                    TrackLabel("Lập trình", t)
+                    Spacer(Modifier.height(10.dp))
+                    Text("for ngay in range(365):\n    hoc_mot_chut()", fontFamily = JetBrainsMono, style = MaterialTheme.typography.bodyMedium)
+                }
+            }
+        }
+        ProvideTrack(Track.ENGLISH) {
+            val t = LocalTrack.current
+            Surface(
+                color = t.container, contentColor = t.onContainer, shape = RoundedCornerShape(24.dp), shadowElevation = 8.dp,
+                modifier = Modifier.align(Alignment.TopEnd).padding(top = 102.dp).fillMaxWidth(0.82f).graphicsLayer { rotationZ = 2f },
+            ) {
+                Column(Modifier.padding(18.dp)) {
+                    TrackLabel("Tiếng Anh", t)
+                    Spacer(Modifier.height(10.dp))
+                    Text("“Could you walk me through it?”", style = MaterialTheme.typography.titleMedium)
+                    Text("Bạn giải thích từng bước giúp mình nhé?", style = MaterialTheme.typography.bodySmall)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TrackLabel(text: String, t: TrackColors) =
+    Surface(color = t.accent, contentColor = t.onAccent, shape = CircleShape) {
+        Text(text, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
+    }
