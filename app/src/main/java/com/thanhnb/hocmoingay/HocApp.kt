@@ -11,6 +11,7 @@ import com.thanhnb.hocmoingay.core.sync.SupabaseRemote
 import com.thanhnb.hocmoingay.core.sync.SyncEngine
 import com.thanhnb.hocmoingay.core.sync.SyncScheduler
 import com.thanhnb.hocmoingay.core.sync.syncTables
+import com.thanhnb.hocmoingay.feature.settings.SettingsRepo
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.coroutines.CoroutineScope
@@ -30,4 +31,7 @@ class AppGraph(app: Application) {
     val sync = SyncEngine(SupabaseRemote(supabase.postgrest), RoomCursors(db.syncState()), syncTables(db))
     val scheduler = SyncScheduler(WorkManager.getInstance(app))
     val realtime = RealtimeSync(supabase, sync)
+    val settings = db.learner().let { l ->
+        SettingsRepo(l.observeSettings(), l::settings, { l.upsertSettings(listOf(it)) }, auth::currentUserId, scheduler::afterWrite)
+    }
 }

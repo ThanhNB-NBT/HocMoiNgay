@@ -18,12 +18,15 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import com.thanhnb.hocmoingay.feature.Placeholder
 import com.thanhnb.hocmoingay.feature.TodayPlaceholder
+import com.thanhnb.hocmoingay.feature.settings.SettingsScreen
+import com.thanhnb.hocmoingay.feature.settings.SettingsViewModel
 
 private fun tabLabel(k: NavKey) = when (k) {
     Today -> "Hôm nay"
@@ -40,7 +43,7 @@ private fun tabIcon(k: NavKey): ImageVector = when (k) {
 }
 
 @Composable
-fun AppNav() {
+fun AppNav(graph: AppGraph) {
     val backStack = rememberNavBackStack(Today)
     val top = backStack.lastOrNull()
     // Inset do từng màn tự lo; Scaffold chỉ chừa chỗ cho thanh tab.
@@ -76,7 +79,9 @@ fun AppNav() {
                         FilledTonalButton(onClick = { backStack.add(Settings) }) { Text("Cài đặt") }
                     }
                 }
-                entry<Settings> { Placeholder("Cài đặt", "Task 9") }
+                entry<Settings> {
+                    SettingsScreen(viewModel { SettingsViewModel(graph.settings) }, onBack = { backStack.removeLastOrNull() })
+                }
                 entry<CourseDetail> { k ->
                     Placeholder("Khoá ${k.courseId}", "Đề cương — giai đoạn c") {
                         Button(onClick = { backStack.add(LessonPlayer("${k.courseId}/nhap-mon/lam-quen/xin-chao")) }) { Text("Mở thử trình phát bài") }
