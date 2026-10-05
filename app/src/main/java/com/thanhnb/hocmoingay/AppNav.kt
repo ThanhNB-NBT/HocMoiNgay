@@ -43,6 +43,7 @@ import androidx.compose.ui.graphics.vector.addPathNodes
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavKey
@@ -63,6 +64,8 @@ import com.thanhnb.hocmoingay.feature.learn.LearnViewModel
 import com.thanhnb.hocmoingay.feature.player.PlayerScreen
 import com.thanhnb.hocmoingay.feature.player.PlayerViewModel
 import com.thanhnb.hocmoingay.feature.profile.ProfileScreen
+import com.thanhnb.hocmoingay.feature.review.ReviewScreen
+import com.thanhnb.hocmoingay.feature.review.ReviewViewModel
 import com.thanhnb.hocmoingay.feature.settings.SettingsScreen
 import com.thanhnb.hocmoingay.feature.settings.SettingsViewModel
 import com.thanhnb.hocmoingay.feature.today.TodayScreen
@@ -152,7 +155,10 @@ fun AppNav(graph: AppGraph) {
                             LearnScreen(viewModel { LearnViewModel(graph.db.curriculum(), graph.db.learner().observeAllProgress()) }, onOpenCourse = { backStack.add(CourseDetail(it)) })
                         }
                         entry<Review> {
-                            Placeholder("Chưa có thẻ cần ôn", "Học xong bài nào, thẻ ôn của bài đó sẽ được xếp lịch và hiện ở đây.", icon = CardsIcon)
+                            ReviewScreen(
+                                viewModel { ReviewViewModel(graph.reviews, { graph.lessons.load(it)?.body }, graph.scope, graph.db.learner().observeNextDue()) },
+                                online = graph.net.online.collectAsStateWithLifecycle().value, api = graph.code, icon = CardsIcon,
+                            )
                         }
                         entry<Profile> {
                             ProfileScreen(graph.supabase.auth.currentUserOrNull()?.email, onOpenSettings = { backStack.add(Settings) })
