@@ -56,6 +56,8 @@ import com.thanhnb.hocmoingay.core.ui.Pushable
 import com.thanhnb.hocmoingay.feature.Placeholder
 import com.thanhnb.hocmoingay.feature.course.CourseScreen
 import com.thanhnb.hocmoingay.feature.course.CourseViewModel
+import com.thanhnb.hocmoingay.feature.editor.EditorScreen
+import com.thanhnb.hocmoingay.feature.editor.EditorViewModel
 import com.thanhnb.hocmoingay.feature.learn.LearnScreen
 import com.thanhnb.hocmoingay.feature.learn.LearnViewModel
 import com.thanhnb.hocmoingay.feature.player.PlayerScreen
@@ -65,6 +67,7 @@ import com.thanhnb.hocmoingay.feature.settings.SettingsScreen
 import com.thanhnb.hocmoingay.feature.settings.SettingsViewModel
 import com.thanhnb.hocmoingay.feature.today.TodayScreen
 import io.github.jan.supabase.auth.auth
+import kotlinx.coroutines.flow.map
 
 private fun tabLabel(k: NavKey) = when (k) {
     Today -> "Hôm nay"
@@ -171,7 +174,17 @@ fun AppNav(graph: AppGraph) {
                                 onOpenEditor = { key -> backStack.add(CodeEditor(k.lessonId, key)) },
                             )
                         }
-                        entry<CodeEditor> { k -> Placeholder("Editor", "${k.lessonId}#${k.cardKey}") }
+                        entry<CodeEditor> { k ->
+                            EditorScreen(
+                                viewModel {
+                                    EditorViewModel(
+                                        k.lessonId, k.cardKey, graph.lessons, graph.db.drafts(), graph.code, graph.net.online,
+                                        graph.settings.settings.map { it.preferredLanguage }, graph.scope,
+                                    )
+                                },
+                                onBack = { backStack.removeLastOrNull() },
+                            )
+                        }
                     },
                 )
             }

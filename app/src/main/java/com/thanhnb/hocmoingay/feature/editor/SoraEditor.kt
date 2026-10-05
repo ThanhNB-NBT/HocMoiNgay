@@ -75,7 +75,12 @@ fun SoraEditor(initial: String, lang: String, onChange: (String) -> Unit, modifi
                     typefaceLineNumber = mono
                     setTextSize(15f)
                     tabWidth = 4
+                    val dp = ctx.resources.displayMetrics.density
+                    lineNumberMarginLeft = 12 * dp // số dòng không dính mép màn
+                    setDividerMargin(8 * dp)
                     isWordwrap = false
+                    // Sora không gõ đè lên dấu đóng tự chèn: gõ `)` sau `(` tự đóng sinh ngoặc thừa — tắt hẳn
+                    props.symbolPairAutoCompletion = false
                     colorScheme = TextMateColorScheme.create(ThemeRegistry.getInstance())
                     setEditorLanguage(TextMateLanguage.create(scopeOf(lang), true))
                     setText(initial)
@@ -91,6 +96,7 @@ fun SoraEditor(initial: String, lang: String, onChange: (String) -> Unit, modifi
                         addView(SymbolInputView(c).apply {
                             bindEditor(editor)
                             textColor = colors.fg.toArgb()
+                            setBackgroundColor(colors.bar.toArgb()) // mặc định nền đen, lệch theme
                             val s = symbolsFor(lang)
                             addSymbols(s.map { it.first }.toTypedArray(), s.map { it.second }.toTypedArray())
                         })

@@ -52,6 +52,10 @@ class LessonRepo(
     }
 
     /** Mở bài: tạo hàng `started` nếu chưa có; bài đã `done` thì giữ nguyên. */
+    suspend fun cardState(lessonId: String, key: String): JsonObject =
+        cardStateOf(getProgress(lessonId))[key] as? JsonObject ?: JsonObject(emptyMap())
+    suspend fun language(lessonId: String): String? = getProgress(lessonId)?.language
+
     suspend fun start(lessonId: String) = edit(lessonId) { it }
 
     suspend fun updateCard(lessonId: String, key: String, change: (JsonObject) -> JsonObject) = edit(lessonId) { p ->
