@@ -12,7 +12,9 @@ class LwwTest {
     @Test fun localDirtyCuHonThiLayServer() = assertEquals(row(300, false), pickRemote(row(200, true), row(300, false)))
     // keep_newer dùng <=: server đã từ chối bản bằng mốc, nên lấy bản server
     @Test fun bangMocThiLayServer() = assertEquals(row(200, false), pickRemote(row(200, true), row(200, false)))
-    @Test fun localSachThiLayServer() = assertEquals(row(100, false), pickRemote(row(200, false), row(100, false)))
+    // bản server cũ hơn bản local (sự kiện realtime đến trễ) thì không được lùi dữ liệu
+    @Test fun localSachMoiHonThiGiu() = assertNull(pickRemote(row(200, false), row(100, false)))
+    @Test fun localSachCuHonThiLayServer() = assertEquals(row(300, false), pickRemote(row(200, false), row(300, false)))
     @Test fun chuaCoLocalThiLayServer() = assertEquals(row(100, false), pickRemote(null, row(100, false)))
 
     @Test fun updatedAtLuonTangKeCaKhiDongHoLui() {

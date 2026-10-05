@@ -39,6 +39,7 @@ class LearnerTable<E : LearnerRow>(
     private val byKeys: suspend (List<String>) -> List<E>,
     private val save: suspend (List<E>) -> Unit,
     private val clean: suspend (String, Long) -> Unit,
+    private val tx: suspend (suspend () -> Unit) -> Unit = { it() },
 ) : TableSync {
     override suspend fun push(remote: Remote) {
         for (chunk in dirty().chunked(200)) {
@@ -48,7 +49,8 @@ class LearnerTable<E : LearnerRow>(
         }
     }
 
-    override suspend fun merge(rows: List<JsonObject>) {
+    // đọc–so–ghi trong một transaction: lần ghi của app (LessonRepo, SettingsRepo) không chen vào giữa
+    override suspend fun merge(rows: List<JsonObject>) = tx {
         val incoming = rows.map { SyncJson.decodeFromJsonElement(serializer, it) }
         val local = byKeys(incoming.map(key)).associateBy(key)
         val keep = incoming.mapNotNull { pickRemote(local[key(it)], it) }

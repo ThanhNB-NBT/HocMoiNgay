@@ -8,6 +8,7 @@ import io.github.jan.supabase.realtime.PostgresAction
 import io.github.jan.supabase.realtime.channel
 import io.github.jan.supabase.realtime.postgresChangeFlow
 import io.github.jan.supabase.realtime.realtime
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.coroutineScope
@@ -31,8 +32,7 @@ class RealtimeSync(private val supabase: SupabaseClient, private val engine: Syn
                     else -> null // xoá mềm là UPDATE; DELETE thật không xảy ra
                 }
                 if (row != null) {
-                    // một hàng hỏng không được làm sập kênh (và app)
-                    runCatching { engine.mergeRemote(table, row) }.onFailure { Log.w("RealtimeSync", "gộp $table lỗi", it) }
+                    mergeSafely { engine.mergeRemote(table, row) }
                 }
             }.launchIn(this)
         }
@@ -42,5 +42,16 @@ class RealtimeSync(private val supabase: SupabaseClient, private val engine: Syn
         } finally {
             withContext(NonCancellable) { supabase.realtime.removeChannel(ch) }
         }
+    }
+}
+
+/** Một hàng hỏng không được làm sập kênh; nhưng huỷ coroutine thì phải nổi lên để kênh dừng đúng. */
+internal suspend fun mergeSafely(block: suspend () -> Unit) {
+    try {
+        block()
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        Log.w("RealtimeSync", "gộp hàng realtime lỗi", e)
     }
 }

@@ -146,4 +146,15 @@ class SyncEngineTest {
         assertEquals(setOf("python"), courses.keys)
         assertTrue(local["d1"]!!.dirty)
     }
+
+    @Test fun mergeChayTrongTransaction() = runTest {
+        val log = mutableListOf<String>()
+        val t = LearnerTable(
+            "daily_log", "user_id,day", DailyLogEntity.serializer(), { it.day },
+            { emptyList() }, { log += "read"; emptyList() }, { log += "save" }, { _, _ -> },
+            tx = { b -> log += "begin"; b(); log += "end" },
+        )
+        t.merge(listOf(day("2026-10-05", synced = "2026-10-05T01:00:00Z")))
+        assertEquals(listOf("begin", "read", "save", "end"), log)
+    }
 }

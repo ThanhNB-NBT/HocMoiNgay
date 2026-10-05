@@ -8,6 +8,6 @@ import com.thanhnb.hocmoingay.core.db.LearnerRow
  */
 fun nextUpdatedAt(prev: Long?, now: Long = System.currentTimeMillis()): Long = maxOf(now, (prev ?: 0L) + 1)
 
-/** Gộp một hàng kéo về. Trả null nghĩa là giữ bản local (đang dirty và mới hơn); còn lại lấy bản server. */
+/** Gộp một hàng kéo về. Trả null = giữ bản local vì nó mới hơn (dirty hay đã sạch); còn lại lấy bản server. */
 fun <E : LearnerRow> pickRemote(local: E?, remote: E): E? =
-    if (local != null && local.dirty && local.updatedAt > remote.updatedAt) null else remote
+    if (local != null && local.updatedAt > remote.updatedAt) null else remote
