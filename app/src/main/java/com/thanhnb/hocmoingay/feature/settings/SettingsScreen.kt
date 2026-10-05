@@ -37,6 +37,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.BorderStroke
+import com.thanhnb.hocmoingay.core.ui.Pushable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -148,7 +150,10 @@ fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit) {
 /** Một nhóm cài đặt trong thẻ bo góc. */
 @Composable
 private fun Section(text: String, content: @Composable () -> Unit) =
-    Surface(color = MaterialTheme.colorScheme.surfaceContainerLow, shape = RoundedCornerShape(24.dp), modifier = Modifier.fillMaxWidth()) {
+    Pushable(
+        null, MaterialTheme.colorScheme.surfaceContainerLowest, RoundedCornerShape(24.dp), Modifier.fillMaxWidth(),
+        edge = MaterialTheme.colorScheme.outlineVariant, border = BorderStroke(2.dp, MaterialTheme.colorScheme.outlineVariant),
+    ) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(text, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             content()

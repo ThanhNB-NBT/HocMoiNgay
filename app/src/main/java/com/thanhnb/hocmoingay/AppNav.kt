@@ -1,15 +1,20 @@
 package com.thanhnb.hocmoingay
 
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.animateContentSize
+import com.thanhnb.hocmoingay.core.ui.Pushable
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -73,30 +78,37 @@ private val CardsIcon = icon("Cards", "M2.53,19.65l1.34,0.56v-9.03l-2.43,5.86c-0
 private fun icon(name: String, path: String) = ImageVector.Builder(name, 24.dp, 24.dp, 24f, 24f)
     .addPath(addPathNodes(path), fill = SolidColor(Color.Black)).build()
 
-/** Thanh tab nổi: tab đang chọn là viên thuốc màu nhấn có chữ, tab khác chỉ có icon. */
+/** Thanh tab: viền trên dày; tab đang chọn là khối vàng lê nổi (cùng ngôn ngữ với nút khối), icon nảy lò xo khi được chọn. */
 @Composable
-private fun PillNavBar(top: NavKey?, onSelect: (NavKey) -> Unit) {
+private fun TabBar(top: NavKey?, onSelect: (NavKey) -> Unit) {
     val cs = MaterialTheme.colorScheme
-    Surface(
-        color = cs.surfaceContainerHigh, shape = CircleShape, shadowElevation = 8.dp,
-        modifier = Modifier.navigationBarsPadding().padding(start = 16.dp, end = 16.dp, bottom = 12.dp, top = 4.dp).fillMaxWidth(),
-    ) {
-        Row(Modifier.padding(6.dp).selectableGroup(), horizontalArrangement = Arrangement.SpaceBetween) {
+    Column(Modifier.background(cs.surface)) {
+        HorizontalDivider(thickness = 2.dp, color = cs.outlineVariant)
+        Row(Modifier.navigationBarsPadding().padding(horizontal = 8.dp, vertical = 8.dp).selectableGroup()) {
             TABS.forEach { tab ->
                 val sel = top == tab
-                val bg by animateColorAsState(if (sel) cs.primary else Color.Transparent, label = "tabBg")
-                val fg by animateColorAsState(if (sel) cs.onPrimary else cs.onSurfaceVariant, label = "tabFg")
-                Row(
-                    Modifier.clip(CircleShape).background(bg)
-                        .selectable(sel, role = Role.Tab, onClick = { onSelect(tab) })
-                        .heightIn(min = 52.dp).padding(horizontal = 18.dp).animateContentSize(),
-                    verticalAlignment = Alignment.CenterVertically,
+                val bounce = remember { Animatable(1f) }
+                LaunchedEffect(sel) { if (sel) { bounce.snapTo(0.75f); bounce.animateTo(1f, spring(dampingRatio = 0.4f, stiffness = 500f)) } }
+                Column(
+                    Modifier.weight(1f).clip(RoundedCornerShape(16.dp))
+                        .selectable(sel, remember { MutableInteractionSource() }, indication = null, role = Role.Tab, onClick = { onSelect(tab) })
+                        .padding(vertical = 2.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    Icon(tabIcon(tab), contentDescription = if (sel) null else tabLabel(tab), tint = fg, modifier = Modifier.size(24.dp))
-                    if (sel) {
-                        Spacer(Modifier.width(8.dp))
-                        Text(tabLabel(tab), color = fg, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold, maxLines = 1)
+                    Box(Modifier.size(width = 60.dp, height = 38.dp).graphicsLayer { scaleX = bounce.value; scaleY = bounce.value }) {
+                        if (sel) {
+                            Pushable(null, cs.primaryContainer, CircleShape, Modifier.matchParentSize()) {
+                                Icon(tabIcon(tab), null, tint = cs.onPrimaryContainer, modifier = Modifier.align(Alignment.Center).size(22.dp))
+                            }
+                        } else {
+                            Icon(tabIcon(tab), null, tint = cs.onSurfaceVariant, modifier = Modifier.align(Alignment.Center).size(24.dp))
+                        }
                     }
+                    Text(
+                        tabLabel(tab), style = MaterialTheme.typography.labelMedium, maxLines = 1,
+                        fontWeight = if (sel) FontWeight.Bold else FontWeight.Medium,
+                        color = if (sel) cs.onSurface else cs.onSurfaceVariant,
+                    )
                 }
             }
         }
@@ -111,7 +123,7 @@ fun AppNav(graph: AppGraph) {
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         bottomBar = {
-            if (top in TABS) PillNavBar(top) { backStack.selectTab(it) }
+            if (top in TABS) TabBar(top) { backStack.selectTab(it) }
         },
     ) { pad ->
         NavDisplay(

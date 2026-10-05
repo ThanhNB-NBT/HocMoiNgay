@@ -21,8 +21,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -59,6 +57,7 @@ import com.thanhnb.hocmoingay.core.theme.JetBrainsMono
 import com.thanhnb.hocmoingay.core.theme.LocalTrack
 import com.thanhnb.hocmoingay.core.theme.ProvideTrack
 import com.thanhnb.hocmoingay.core.theme.Track
+import com.thanhnb.hocmoingay.core.ui.PushButton
 import com.thanhnb.hocmoingay.feature.TrackLabel
 import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.auth.providers.builtin.Email
@@ -151,13 +150,7 @@ fun LoginScreen(vm: LoginViewModel) {
                 }
             }
             Spacer(Modifier.height(24.dp))
-            Button(onClick = submit, enabled = ready && !ui.busy, modifier = Modifier.fillMaxWidth().height(56.dp)) {
-                if (ui.busy) {
-                    CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.dp)
-                } else {
-                    Text("Bắt đầu học", style = MaterialTheme.typography.titleMedium)
-                }
-            }
+            PushButton(if (ui.busy) "Đang vào…" else "Bắt đầu học", submit, Modifier.fillMaxWidth(), enabled = ready && !ui.busy)
             // Chỉ bản debug có DEV_EMAIL (từ local.properties); release luôn rỗng nên nút không tồn tại
             if (BuildConfig.DEV_EMAIL.isNotEmpty()) {
                 Spacer(Modifier.height(12.dp))

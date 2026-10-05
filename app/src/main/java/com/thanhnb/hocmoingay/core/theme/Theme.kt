@@ -1,13 +1,16 @@
 package com.thanhnb.hocmoingay.core.theme
 
 import android.os.Build
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Shapes
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -26,6 +29,15 @@ fun isDark(mode: ThemeMode, systemDark: Boolean) = when (mode) {
 }
 
 val LocalTrackPalette = staticCompositionLocalOf { TrackPalette(CodeLight, EnglishLight) }
+
+/** Coral + mint, xem [FunColors]. */
+val LocalFun = staticCompositionLocalOf { FunLight }
+
+// Bo tròn hết cỡ: không góc vuông nào (Hum)
+private val HumShapes = Shapes(
+    extraSmall = RoundedCornerShape(8.dp), small = RoundedCornerShape(12.dp), medium = RoundedCornerShape(20.dp),
+    large = RoundedCornerShape(28.dp), extraLarge = RoundedCornerShape(36.dp),
+)
 
 /** Accent của mảng đang hiển thị (spec §7.2). Đặt bằng [ProvideTrack]. */
 val LocalTrack = staticCompositionLocalOf { CodeLight }
@@ -48,11 +60,12 @@ fun HocTheme(style: ThemeStyle, dark: Boolean, content: @Composable () -> Unit) 
         // Hai sắc, và Hình nền trên máy < Android 12
         else -> twoToneScheme(dark) to if (dark) TrackPalette(CodeDark, EnglishDark) else TrackPalette(CodeLight, EnglishLight)
     }
-    CompositionLocalProvider(LocalTrackPalette provides palette, LocalTrack provides palette.code) {
+    CompositionLocalProvider(LocalTrackPalette provides palette, LocalTrack provides palette.code, LocalFun provides if (dark) FunDark else FunLight) {
         // material3 1.4.0 (BOM 2026.09.00) còn để MaterialExpressiveTheme internal; đổi khi bản ổn định mở ra
         MaterialTheme(
             colorScheme = scheme,
             typography = appTypography(ide = style == ThemeStyle.IDE),
+            shapes = HumShapes,
             content = content,
         )
     }

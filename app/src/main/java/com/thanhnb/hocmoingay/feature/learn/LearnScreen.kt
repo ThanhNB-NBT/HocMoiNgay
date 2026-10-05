@@ -1,5 +1,7 @@
 package com.thanhnb.hocmoingay.feature.learn
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,13 +16,13 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -40,7 +42,11 @@ import com.thanhnb.hocmoingay.core.theme.ProvideTrack
 import com.thanhnb.hocmoingay.core.theme.Track
 import com.thanhnb.hocmoingay.feature.Placeholder
 import com.thanhnb.hocmoingay.feature.ScreenHeader
-import com.thanhnb.hocmoingay.feature.TrackLabel
+import com.thanhnb.hocmoingay.core.ui.Cookie
+import com.thanhnb.hocmoingay.core.ui.Flower
+import com.thanhnb.hocmoingay.core.ui.Pushable
+import com.thanhnb.hocmoingay.core.ui.rise
+import com.thanhnb.hocmoingay.core.ui.shapeFor
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
 
@@ -90,15 +96,20 @@ fun LearnScreen(vm: LearnViewModel, onOpenCourse: (String) -> Unit) {
                 val track = if (items.first().track == "code") Track.CODE else Track.ENGLISH
                 item(key = "h-$label") {
                     ProvideTrack(track) {
-                        Row(Modifier.padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 2.dp), verticalAlignment = Alignment.CenterVertically) {
-                            TrackLabel(label, LocalTrack.current)
-                            Spacer(Modifier.width(8.dp))
-                            Text("${items.size} khoá", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        val t = LocalTrack.current
+                        Row(Modifier.padding(start = 20.dp, end = 20.dp, top = 18.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Box(Modifier.size(26.dp).background(t.accent, if (track == Track.CODE) Cookie else Flower))
+                            Spacer(Modifier.width(10.dp))
+                            Text(label, style = MaterialTheme.typography.headlineSmall, modifier = Modifier.weight(1f))
+                            Text(
+                                "${items.size} khoá", style = MaterialTheme.typography.labelLarge, color = t.onContainer,
+                                modifier = Modifier.background(t.container, CircleShape).padding(horizontal = 12.dp, vertical = 4.dp),
+                            )
                         }
                     }
                 }
-                items(items, key = { it.id }) { c ->
-                    ProvideTrack(track) { CourseCard(c) { onOpenCourse(c.id) } }
+                itemsIndexed(items, key = { _, c -> c.id }) { i, c ->
+                    ProvideTrack(track) { CourseCard(c, Modifier.rise(i)) { onOpenCourse(c.id) } }
                 }
             }
         }
@@ -106,26 +117,24 @@ fun LearnScreen(vm: LearnViewModel, onOpenCourse: (String) -> Unit) {
 }
 
 @Composable
-private fun CourseCard(c: CourseEntity, onClick: () -> Unit) {
+private fun CourseCard(c: CourseEntity, modifier: Modifier, onClick: () -> Unit) {
     val t = LocalTrack.current
     val cs = MaterialTheme.colorScheme
-    Surface(
-        onClick = onClick, color = cs.surfaceContainerLow, shape = RoundedCornerShape(24.dp),
-        modifier = Modifier.padding(horizontal = 16.dp).fillMaxWidth(),
+    Pushable(
+        onClick, cs.surfaceContainerLowest, RoundedCornerShape(24.dp), modifier.padding(horizontal = 20.dp).fillMaxWidth(),
+        edge = cs.outlineVariant, border = BorderStroke(2.dp, cs.outlineVariant),
     ) {
         Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-            Surface(color = t.container, contentColor = t.onContainer, shape = RoundedCornerShape(16.dp)) {
-                Box(Modifier.size(56.dp), contentAlignment = Alignment.Center) {
-                    Text(courseGlyph(c.id, c.title), fontFamily = JetBrainsMono, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall, maxLines = 1)
-                }
+            Box(Modifier.size(58.dp).background(t.accent, shapeFor(c.id)), contentAlignment = Alignment.Center) {
+                Text(courseGlyph(c.id, c.title), color = t.onAccent, fontFamily = JetBrainsMono, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall, maxLines = 1)
             }
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
-                Text(c.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(c.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Spacer(Modifier.height(2.dp))
                 Text(c.description, style = MaterialTheme.typography.bodySmall, color = cs.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
             }
-            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = cs.onSurfaceVariant)
+            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = t.accent)
         }
     }
 }

@@ -44,6 +44,13 @@ class ThemeTest {
         }
     }
 
+    @Test fun mauNhanPhuDatTuongPhan() {
+        for (f in listOf(FunLight, FunDark)) {
+            assertTrue("$f coral", ratio(f.onCoral, f.coral) >= 4.5)
+            assertTrue("$f coral container", ratio(f.onCoralContainer, f.coralContainer) >= 4.5)
+        }
+    }
+
     @Test fun cheDoToi() {
         assertTrue(isDark(ThemeMode.SYSTEM, systemDark = true))
         assertFalse(isDark(ThemeMode.SYSTEM, systemDark = false))
