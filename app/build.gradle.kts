@@ -24,6 +24,7 @@ fun com.android.build.api.dsl.ApplicationBuildType.useDevServer() {
     buildConfigField("String", "SUPABASE_ANON_KEY", javaStr(devEnv.getProperty("ANON_KEY", "")))
     buildConfigField("String", "DEV_EMAIL", javaStr(devEnv.getProperty("DEV_TEST_EMAIL", "")))
     buildConfigField("String", "DEV_PASSWORD", javaStr(devEnv.getProperty("DEV_TEST_PASSWORD", "")))
+    buildConfigField("boolean", "SHOW_SAMPLES", "true")
     manifestPlaceholders["cleartext"] = "true" // server dev chạy http
 }
 
@@ -43,6 +44,7 @@ android {
         // Production (release) luôn rỗng → không có nút điền tài khoản test
         buildConfigField("String", "DEV_EMAIL", "\"\"")
         buildConfigField("String", "DEV_PASSWORD", "\"\"")
+        buildConfigField("boolean", "SHOW_SAMPLES", "false")
         manifestPlaceholders["cleartext"] = "false"
     }
 

@@ -56,7 +56,7 @@ fun groupCourses(list: List<CourseEntity>) =
         .filter { it.second.isNotEmpty() }
 
 class LearnViewModel(dao: CurriculumDao) : ViewModel() {
-    val courses = dao.observeCourses(showSamples = BuildConfig.DEBUG)
+    val courses = dao.observeCourses(showSamples = BuildConfig.SHOW_SAMPLES)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 }
 
