@@ -63,6 +63,7 @@ import com.thanhnb.hocmoingay.feature.player.permutation
 import com.thanhnb.hocmoingay.feature.player.predictOk
 import com.thanhnb.hocmoingay.feature.player.reviewOk
 import com.thanhnb.hocmoingay.feature.settings.LANGUAGES
+import kotlin.math.roundToLong
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.booleanOrNull
@@ -163,7 +164,7 @@ private fun RunExampleCard(c: RunExample, ctx: CardCtx) {
         out?.let { r ->
             Text("Kết quả thật", style = MaterialTheme.typography.labelLarge)
             CodeBlock((r.compile?.stderr.orEmpty() + r.run.stdout + r.run.stderr).ifEmpty { "(không in gì)" }, "text")
-            r.timeMs?.let { Text("$it ms", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+            r.timeMs?.let { Text("${it.roundToLong()} ms", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
         }
     }
 }

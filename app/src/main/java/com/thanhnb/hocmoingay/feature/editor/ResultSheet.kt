@@ -40,6 +40,7 @@ import com.thanhnb.hocmoingay.core.theme.JetBrainsMono
 import com.thanhnb.hocmoingay.core.theme.LocalFun
 import com.thanhnb.hocmoingay.core.ui.Pushable
 import com.thanhnb.hocmoingay.feature.player.cards.Why
+import kotlin.math.roundToLong
 
 @Composable
 fun ResultBody(out: Outcome, lang: String, solution: String?) {
@@ -60,7 +61,7 @@ fun ResultBody(out: Outcome, lang: String, solution: String?) {
                     style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = if (good) cs.onSurface else f.onCoralContainer,
                 )
                 Text(
-                    listOfNotNull("${j.timeMs} ms", j.memoryKb?.let { "$it KB" }, if (out is Outcome.Ran) "chỉ test công khai" else "gồm test ẩn").joinToString(" · "),
+                    listOfNotNull("${j.timeMs.roundToLong()} ms", j.memoryKb?.let { "$it KB" }, if (out is Outcome.Ran) "chỉ test công khai" else "gồm test ẩn").joinToString(" · "),
                     style = MaterialTheme.typography.labelMedium, color = if (good) cs.onSurfaceVariant else f.onCoralContainer,
                 )
             }
@@ -90,7 +91,7 @@ private fun TestRow(t: TestReport) {
             Icon(if (t.pass) Icons.Filled.Check else Icons.Filled.Close, if (t.pass) "Đạt" else "Trượt", tint = if (t.pass) f.mint else f.coral, modifier = Modifier.size(20.dp))
             Spacer(Modifier.width(8.dp))
             Text(if (t.hidden) "Test ẩn" else t.name, Modifier.weight(1f), style = MaterialTheme.typography.titleSmall)
-            Text("${t.timeMs} ms", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(if (t.timeMs < 1) "<1 ms" else "${t.timeMs.roundToLong()} ms", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         if (!t.pass && !t.hidden) {
             t.expected?.let { Text("Mong đợi: $it", fontFamily = JetBrainsMono, style = MaterialTheme.typography.bodySmall) }

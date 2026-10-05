@@ -46,11 +46,11 @@ fun compileEta(lang: String): Int? = when (lang) {
 @Serializable data class RunOut(val stdout: String = "", val stderr: String = "", val code: Int? = null, val signal: String? = null, val status: String? = null)
 @Serializable data class FreeRun(
     val compile: RunOut? = null, val run: RunOut,
-    @SerialName("time_ms") val timeMs: Long? = null, @SerialName("memory_kb") val memoryKb: Long? = null,
+    @SerialName("time_ms") val timeMs: Double? = null, @SerialName("memory_kb") val memoryKb: Long? = null,
 )
 @Serializable data class TestReport(
     val name: String, val pass: Boolean, val expected: JsonElement? = null, val actual: JsonElement? = null,
-    val error: String? = null, @SerialName("time_ms") val timeMs: Long = 0, val hidden: Boolean = false,
+    val error: String? = null, @SerialName("time_ms") val timeMs: Double = 0.0, val hidden: Boolean = false, // harness đo ms thực
 )
 @Serializable data class Grade(
     val correctness: Int, val readability: Int, val complexity: String,
@@ -63,7 +63,7 @@ fun compileEta(lang: String): Int? = when (lang) {
     @SerialName("compile_output") val compileOutput: String? = null,
     val tests: List<TestReport> = emptyList(),
     val stdout: String = "", val stderr: String = "",
-    @SerialName("time_ms") val timeMs: Long = 0, @SerialName("memory_kb") val memoryKb: Long? = null,
+    @SerialName("time_ms") val timeMs: Double = 0.0, @SerialName("memory_kb") val memoryKb: Long? = null,
     val grade: Grade? = null, @SerialName("grade_error") val gradeError: String? = null,
 ) {
     val allPass: Boolean get() = compiled && tests.isNotEmpty() && tests.all { it.pass }

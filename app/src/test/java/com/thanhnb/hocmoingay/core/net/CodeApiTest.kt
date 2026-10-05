@@ -64,4 +64,13 @@ class CodeApiTest {
         assertEquals(4, compileEta("kotlin"))
         assertEquals(2, compileEta("rust"))
     }
+
+    // bài kiểu function: harness đo từng test bằng ms thực (0.0052…), tổng cũng là số thực
+    @Test fun thoiGianLaSoThucVanDocDuoc() = runTest {
+        val body = """{"compiled":true,"tests":[{"name":"vd1","pass":true,"expected":[0,1],"actual":[0,1],"time_ms":0.0052,"hidden":false}],
+            "stdout":"","stderr":"","time_ms":74.6,"memory_kb":4664}"""
+        val r = CodeApi { _, _ -> body }.submit("l", "k", "python", "x", hints = 0) as ApiResult.Ok
+        assertTrue(r.value.allPass)
+        assertEquals(75L, Math.round(r.value.timeMs.toDouble()))
+    }
 }
