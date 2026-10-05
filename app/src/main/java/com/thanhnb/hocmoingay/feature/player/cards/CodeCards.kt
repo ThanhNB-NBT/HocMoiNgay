@@ -93,7 +93,7 @@ fun CodeCardView(card: Card, ctx: CardCtx) = when (card) {
     is FindBug -> FindBugCard(card, ctx)
     is CodeReview -> CodeReviewCard(card, ctx)
     is CodeTask -> CodeTaskCard(card, ctx)
-    else -> LaterCard(ctx) // card tiếng Anh: giai đoạn d
+    else -> LaterCard(ctx) // loại card app chưa biết vẽ
 }
 
 @Composable

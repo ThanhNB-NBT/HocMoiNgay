@@ -36,6 +36,10 @@ import com.thanhnb.hocmoingay.core.lesson.Match
 import com.thanhnb.hocmoingay.core.lesson.MinimalPair
 import com.thanhnb.hocmoingay.core.lesson.Quiz
 import com.thanhnb.hocmoingay.core.lesson.Read
+import com.thanhnb.hocmoingay.core.lesson.Shadow
+import com.thanhnb.hocmoingay.core.lesson.Speak
+import com.thanhnb.hocmoingay.core.lesson.SpeakFree
+import com.thanhnb.hocmoingay.core.lesson.TimedTalk
 import com.thanhnb.hocmoingay.core.lesson.Vocab
 import com.thanhnb.hocmoingay.core.net.ApiResult
 import com.thanhnb.hocmoingay.core.net.CodeApi
@@ -63,7 +67,11 @@ fun CardView(card: Card, ctx: CardCtx) = when (card) {
     is Explain -> ExplainCard(card, ctx)
     is Quiz -> QuizCard(card, ctx)
     is Match -> MatchCard(card, ctx)
-    is FreeText -> if (card.mode == "explain") FreeTextCard(card, ctx) else LaterCard(ctx) // Task 8: WritingCard
+    is FreeText -> if (card.mode == "explain") FreeTextCard(card, ctx) else WritingCard(card, ctx)
+    is Speak -> RepeatCard(card.text, shadow = false, ctx)
+    is Shadow -> RepeatCard(card.text, shadow = true, ctx)
+    is TimedTalk -> TimedTalkCard(card, ctx)
+    is SpeakFree -> SpeakFreeCard(card, ctx)
     is Vocab -> VocabCard(card, ctx)
     is Listen -> ListenCard(card, ctx)
     is Read -> ReadCard(card, ctx)

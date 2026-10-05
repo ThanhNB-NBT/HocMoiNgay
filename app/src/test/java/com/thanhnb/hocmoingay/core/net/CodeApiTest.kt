@@ -73,4 +73,22 @@ class CodeApiTest {
         assertTrue(r.value.allPass)
         assertEquals(75L, Math.round(r.value.timeMs.toDouble()))
     }
+
+    @Test fun nhanXetVietVaNoiGuiDungModeVaDocKetQua() = runTest {
+        val sent = mutableListOf<JsonObject>()
+        val api = CodeApi { fn, body ->
+            assertEquals("feedback", fn)
+            sent += body
+            """{"task_done":true,"score":7,"fixes":[{"wrong":"I fix","right":"I fixed","why":"quá khứ"}],
+                "tone":"ổn","better_version":"Yesterday I fixed it.","used_chunks":["fix a bug"],"notes":"tốt"}"""
+        }
+        val r = api.writing("l", "viet", "Yesterday I fix it.", speaking = false) as ApiResult.Ok
+        assertEquals(7, r.value.score)
+        assertEquals("I fixed", r.value.fixes.single().right)
+        assertEquals(listOf("fix a bug"), r.value.usedChunks)
+        api.writing("l", "noi", "i fix it", speaking = true)
+        assertEquals(listOf("writing", "speaking"), sent.map { it["mode"]!!.jsonPrimitive.content })
+        assertEquals("viet", sent[0]["card_key"]!!.jsonPrimitive.content)
+        assertEquals("Yesterday I fix it.", sent[0]["text"]!!.jsonPrimitive.content)
+    }
 }

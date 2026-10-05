@@ -49,6 +49,7 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import com.thanhnb.hocmoingay.core.code.LocalAssets
+import com.thanhnb.hocmoingay.core.speech.LocalStt
 import com.thanhnb.hocmoingay.core.speech.LocalTts
 import com.thanhnb.hocmoingay.core.ui.LocalShared
 import com.thanhnb.hocmoingay.core.ui.Pushable
@@ -140,7 +141,7 @@ fun AppNav(graph: AppGraph) {
         },
     ) { pad ->
         SharedTransitionLayout {
-            CompositionLocalProvider(LocalShared provides this, LocalAssets provides graph.assets, LocalTts provides graph.tts) {
+            CompositionLocalProvider(LocalShared provides this, LocalAssets provides graph.assets, LocalTts provides graph.tts, LocalStt provides graph.stt) {
                 NavDisplay(
                     backStack = backStack,
                     onBack = { backStack.removeLastOrNull() },

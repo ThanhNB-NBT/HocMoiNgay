@@ -1,5 +1,9 @@
 package com.thanhnb.hocmoingay.feature.english
 
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -17,15 +21,18 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.thanhnb.hocmoingay.core.speech.LocalTts
 import com.thanhnb.hocmoingay.core.speech.Tts
+import com.thanhnb.hocmoingay.core.theme.LocalFun
 import com.thanhnb.hocmoingay.core.theme.LocalTrack
 import com.thanhnb.hocmoingay.core.ui.PushButton
 import com.thanhnb.hocmoingay.core.ui.Pushable
@@ -76,5 +83,27 @@ fun SpeakerBar(text: String, autoPlay: Boolean = false, initialRate: Float = 1f)
                 FilterChip(selected = rate == r, onClick = { rate = r; tts.speak(text, r, owner) }, label = { Text(label) })
             }
         }
+    }
+}
+
+/** Chạy [action] nếu đã có quyền micro; chưa có thì hỏi, đồng ý thì chạy, từ chối thì [onDenied]. */
+@Composable
+fun rememberMic(onDenied: () -> Unit, action: () -> Unit): () -> Unit {
+    val ctx = LocalContext.current
+    val act by rememberUpdatedState(action)
+    val deny by rememberUpdatedState(onDenied)
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok -> if (ok) act() else deny() }
+    return {
+        if (ContextCompat.checkSelfPermission(ctx, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) act()
+        else launcher.launch(Manifest.permission.RECORD_AUDIO)
+    }
+}
+
+@Composable
+fun MicButton(on: Boolean, onClick: () -> Unit) {
+    val f = LocalFun.current
+    val t = LocalTrack.current
+    Pushable(onClick, if (on) f.coral else t.accent, CircleShape, Modifier.size(72.dp)) {
+        Icon(MicIcon, if (on) "Dừng nói" else "Bắt đầu nói", tint = if (on) f.onCoral else t.onAccent, modifier = Modifier.align(Alignment.Center).size(34.dp))
     }
 }

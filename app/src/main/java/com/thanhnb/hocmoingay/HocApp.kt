@@ -12,6 +12,7 @@ import com.thanhnb.hocmoingay.core.net.CodeApi
 import com.thanhnb.hocmoingay.core.net.NetState
 import com.thanhnb.hocmoingay.core.net.createSupabase
 import com.thanhnb.hocmoingay.core.review.ReviewRepo
+import com.thanhnb.hocmoingay.core.speech.Stt
 import com.thanhnb.hocmoingay.core.speech.Tts
 import com.thanhnb.hocmoingay.core.sync.RealtimeSync
 import com.thanhnb.hocmoingay.core.sync.RoomCursors
@@ -71,6 +72,7 @@ class AppGraph(app: Application) {
     }
     /** Tạo lần đầu khi màn cần, trên main thread (TextToSpeech khởi tạo bất đồng bộ). */
     val tts by lazy { Tts(app) }
+    val stt by lazy { Stt(app) }
     val net = NetState(app, scope)
     val code = CodeApi { fn, body ->
         try {

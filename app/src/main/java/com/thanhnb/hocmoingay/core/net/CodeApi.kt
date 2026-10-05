@@ -72,6 +72,13 @@ fun compileEta(lang: String): Int? = when (lang) {
     val correct: Boolean, val score: Int, val missing: List<String> = emptyList(),
     val misconceptions: List<String> = emptyList(), val notes: String = "",
 )
+@Serializable data class Fix(val wrong: String, val right: String, val why: String = "")
+/** Kết quả `feedback` mode writing/speaking (server/functions/feedback/logic.ts, schema WRITE). */
+@Serializable data class WriteFb(
+    @SerialName("task_done") val taskDone: Boolean, val score: Int, val fixes: List<Fix> = emptyList(), val tone: String = "",
+    @SerialName("better_version") val betterVersion: String = "", @SerialName("used_chunks") val usedChunks: List<String> = emptyList(),
+    val notes: String = "",
+)
 @Serializable private data class StarterOut(val code: String)
 @Serializable private data class HintOut(val lines: List<String>)
 
@@ -106,4 +113,9 @@ class CodeApi(private val call: suspend (fn: String, body: JsonObject) -> String
 
     suspend fun explain(lessonId: String, cardKey: String, text: String): ApiResult<ExplainFb> =
         go("feedback", buildJsonObject { put("mode", "explain"); put("lesson_id", lessonId); put("card_key", cardKey); put("text", text) })
+
+    suspend fun writing(lessonId: String, cardKey: String, text: String, speaking: Boolean): ApiResult<WriteFb> =
+        go("feedback", buildJsonObject {
+            put("mode", if (speaking) "speaking" else "writing"); put("lesson_id", lessonId); put("card_key", cardKey); put("text", text)
+        })
 }
