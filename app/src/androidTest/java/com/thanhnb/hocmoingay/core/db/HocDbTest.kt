@@ -73,4 +73,15 @@ class HocDbTest {
         assertEquals(null, s.cursor("progress"))
         assertEquals("2026-10-05T00:00:00Z", s.cursor("courses"))
     }
+
+    @Test fun dueRecallChiLayTheRecallDenHanChuaXoa() = runTest {
+        val l = db.learner()
+        fun c(id: String, due: Long, kind: String = "recall", deleted: Boolean = false) = ReviewCardEntity(
+            id = id, userId = "u1", ref = "r$id", kind = kind, track = "english", courseId = "c", due = due, updatedAt = 1, deleted = deleted,
+        )
+        l.upsertReviewCards(listOf(c("a", 50), c("b", 10), c("c", 500), c("d", 5, kind = "resolve"), c("e", 1, deleted = true)))
+        assertEquals(listOf("b", "a"), l.dueRecall(100, 10).map { it.id })
+        assertEquals(2, l.observeDueCount(100).first())
+        assertEquals(10L, l.observeNextDue().first())
+    }
 }

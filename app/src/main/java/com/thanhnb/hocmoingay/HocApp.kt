@@ -5,11 +5,13 @@ import androidx.work.WorkManager
 import com.thanhnb.hocmoingay.core.auth.AuthRepo
 import com.thanhnb.hocmoingay.core.db.HocDb
 import com.thanhnb.hocmoingay.core.lesson.LessonRepo
+import com.thanhnb.hocmoingay.core.log.DailyLogRepo
 import com.thanhnb.hocmoingay.core.net.ApiHttp
 import com.thanhnb.hocmoingay.core.net.Assets
 import com.thanhnb.hocmoingay.core.net.CodeApi
 import com.thanhnb.hocmoingay.core.net.NetState
 import com.thanhnb.hocmoingay.core.net.createSupabase
+import com.thanhnb.hocmoingay.core.review.ReviewRepo
 import com.thanhnb.hocmoingay.core.sync.RealtimeSync
 import com.thanhnb.hocmoingay.core.sync.RoomCursors
 import com.thanhnb.hocmoingay.core.sync.SupabaseRemote
@@ -60,6 +62,12 @@ class AppGraph(app: Application) {
         userId = auth::currentUserId,
         afterWrite = scheduler::afterWrite,
     )
+    val log = db.learner().let { l ->
+        DailyLogRepo({ l.dailyLogByKeys(listOf(it)).firstOrNull() }, { l.upsertDailyLog(listOf(it)) }, dbTx(db), auth::currentUserId, scheduler::afterWrite)
+    }
+    val reviews = db.learner().let { l ->
+        ReviewRepo(l::dueRecall, l::reviewCardsByKeys, { l.upsertReviewCards(listOf(it)) }, log, dbTx(db), scheduler::afterWrite)
+    }
     val net = NetState(app, scope)
     val code = CodeApi { fn, body ->
         try {
