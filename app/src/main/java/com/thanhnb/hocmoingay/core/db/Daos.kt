@@ -18,6 +18,9 @@ interface CurriculumDao {
     /** Khoá `_…` (_sample-code, _sample-en) chỉ hiện ở bản debug (Kết quả f1). */
     @Query("SELECT * FROM courses WHERE :showSamples OR substr(id, 1, 1) <> '_' ORDER BY sort, id")
     fun observeCourses(showSamples: Boolean): Flow<List<CourseEntity>>
+    @Query("SELECT * FROM lessons WHERE id = :id") suspend fun lesson(id: String): LessonEntity?
+    @Query("SELECT * FROM courses WHERE id = :id") suspend fun course(id: String): CourseEntity?
+    @Query("SELECT * FROM courses WHERE id = :id") fun observeCourse(id: String): Flow<CourseEntity?>
 }
 
 @Dao
@@ -58,6 +61,8 @@ abstract class LearnerDao {
         wipeDailyLog()
         wipeSettings()
     }
+    @Query("SELECT * FROM progress WHERE lessonId = :lessonId") abstract fun observeProgress(lessonId: String): Flow<ProgressEntity?>
+    @Query("SELECT * FROM progress WHERE deleted = 0") abstract fun observeAllProgress(): Flow<List<ProgressEntity>>
 }
 
 @Dao

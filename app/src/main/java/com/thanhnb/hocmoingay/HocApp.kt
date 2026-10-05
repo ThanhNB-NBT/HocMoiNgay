@@ -4,12 +4,14 @@ import android.app.Application
 import androidx.work.WorkManager
 import com.thanhnb.hocmoingay.core.auth.AuthRepo
 import com.thanhnb.hocmoingay.core.db.HocDb
+import com.thanhnb.hocmoingay.core.lesson.LessonRepo
 import com.thanhnb.hocmoingay.core.net.createSupabase
 import com.thanhnb.hocmoingay.core.sync.RealtimeSync
 import com.thanhnb.hocmoingay.core.sync.RoomCursors
 import com.thanhnb.hocmoingay.core.sync.SupabaseRemote
 import com.thanhnb.hocmoingay.core.sync.SyncEngine
 import com.thanhnb.hocmoingay.core.sync.SyncScheduler
+import com.thanhnb.hocmoingay.core.sync.dbTx
 import com.thanhnb.hocmoingay.core.sync.syncTables
 import com.thanhnb.hocmoingay.feature.settings.SettingsRepo
 import io.github.jan.supabase.auth.auth
@@ -38,4 +40,15 @@ class AppGraph(app: Application) {
             observePulled = db.syncState().observeCursor("settings").map { it != null },
         )
     }
+    val lessons = LessonRepo(
+        lesson = db.curriculum()::lesson,
+        track = { db.curriculum().course(it)?.track },
+        getProgress = { db.learner().progressByKeys(listOf(it)).firstOrNull() },
+        putProgress = { db.learner().upsertProgress(listOf(it)) },
+        cardsByIds = db.learner()::reviewCardsByKeys,
+        putCards = db.learner()::upsertReviewCards,
+        tx = dbTx(db),
+        userId = auth::currentUserId,
+        afterWrite = scheduler::afterWrite,
+    )
 }
