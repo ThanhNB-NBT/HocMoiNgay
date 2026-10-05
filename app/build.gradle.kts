@@ -11,9 +11,11 @@ plugins {
 }
 
 // local.properties (gitignore): sdk.dir + ANON_KEY=... (Task 6 lấy từ .env trên box)
+// + TEST_EMAIL/TEST_PASSWORD (tuỳ chọn, chép từ ~/hocmoingay/server/.test-user) cho nút điền nhanh của bản debug
 val local = Properties().apply {
     rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use(::load)
 }
+fun javaStr(v: String) = "\"" + v.trim().removeSurrounding("'").removeSurrounding("\"").replace("\\", "\\\\").replace("\"", "\\\"") + "\""
 
 android {
     namespace = "com.thanhnb.hocmoingay"
@@ -28,9 +30,16 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "SUPABASE_URL", "\"https://hoc-api.120203.xyz\"")
         buildConfigField("String", "SUPABASE_ANON_KEY", "\"${local.getProperty("ANON_KEY", "")}\"")
+        // Production (release) luôn rỗng → không có nút điền tài khoản test
+        buildConfigField("String", "DEV_EMAIL", "\"\"")
+        buildConfigField("String", "DEV_PASSWORD", "\"\"")
     }
 
     buildTypes {
+        debug {
+            buildConfigField("String", "DEV_EMAIL", javaStr(local.getProperty("TEST_EMAIL", "")))
+            buildConfigField("String", "DEV_PASSWORD", javaStr(local.getProperty("TEST_PASSWORD", "")))
+        }
         release {
             isMinifyEnabled = true
             isShrinkResources = true

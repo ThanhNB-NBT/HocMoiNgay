@@ -26,6 +26,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -54,6 +55,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
+import com.thanhnb.hocmoingay.BuildConfig
 import com.thanhnb.hocmoingay.core.theme.JetBrainsMono
 import com.thanhnb.hocmoingay.core.theme.LocalTrack
 import com.thanhnb.hocmoingay.core.theme.ProvideTrack
@@ -156,6 +158,14 @@ fun LoginScreen(vm: LoginViewModel) {
                 } else {
                     Text("Bắt đầu học", style = MaterialTheme.typography.titleMedium)
                 }
+            }
+            // Chỉ bản debug có DEV_EMAIL (từ local.properties); release luôn rỗng nên nút không tồn tại
+            if (BuildConfig.DEV_EMAIL.isNotEmpty()) {
+                Spacer(Modifier.height(12.dp))
+                OutlinedButton(
+                    onClick = { email = BuildConfig.DEV_EMAIL; password = BuildConfig.DEV_PASSWORD },
+                    enabled = !ui.busy, modifier = Modifier.fillMaxWidth(),
+                ) { Text("Điền tài khoản test (dev)") }
             }
             Spacer(Modifier.height(20.dp))
             Text(
