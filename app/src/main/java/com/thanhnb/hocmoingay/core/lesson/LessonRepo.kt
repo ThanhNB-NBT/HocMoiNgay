@@ -36,12 +36,12 @@ class LessonRepo(
     private val now: () -> Long = System::currentTimeMillis,
     private val cpu: CoroutineDispatcher = Dispatchers.Default, // test truyền dispatcher của runTest
 ) {
-    data class Loaded(val entity: LessonEntity, val body: LessonBody)
+    data class Loaded(val entity: LessonEntity, val body: LessonBody, val track: String = "code")
 
     suspend fun load(lessonId: String): Loaded? {
         val e = lesson(lessonId) ?: return null
         val b = withContext(cpu) { parseLesson(e.body) } ?: return null
-        return Loaded(e, b)
+        return Loaded(e, b, track(e.courseId) ?: "code")
     }
 
     private suspend fun edit(lessonId: String, change: (ProgressEntity) -> ProgressEntity) {
@@ -79,7 +79,7 @@ class LessonRepo(
     suspend fun finish(lessonId: String, score: Int) {
         val uid = userId() ?: return
         val l = load(lessonId) ?: return
-        val trackName = track(l.entity.courseId) ?: "code"
+        val trackName = l.track
         val t = now()
         edit(lessonId) { p ->
             val best = maxOf(p.score ?: 0, score)

@@ -28,10 +28,15 @@ import androidx.compose.ui.unit.dp
 import com.thanhnb.hocmoingay.core.code.Markdown
 import com.thanhnb.hocmoingay.core.code.inlineMd
 import com.thanhnb.hocmoingay.core.lesson.Card
+import com.thanhnb.hocmoingay.core.lesson.Dialogue
 import com.thanhnb.hocmoingay.core.lesson.Explain
 import com.thanhnb.hocmoingay.core.lesson.FreeText
+import com.thanhnb.hocmoingay.core.lesson.Listen
 import com.thanhnb.hocmoingay.core.lesson.Match
+import com.thanhnb.hocmoingay.core.lesson.MinimalPair
 import com.thanhnb.hocmoingay.core.lesson.Quiz
+import com.thanhnb.hocmoingay.core.lesson.Read
+import com.thanhnb.hocmoingay.core.lesson.Vocab
 import com.thanhnb.hocmoingay.core.net.ApiResult
 import com.thanhnb.hocmoingay.core.net.CodeApi
 import com.thanhnb.hocmoingay.core.net.ExplainFb
@@ -58,7 +63,12 @@ fun CardView(card: Card, ctx: CardCtx) = when (card) {
     is Explain -> ExplainCard(card, ctx)
     is Quiz -> QuizCard(card, ctx)
     is Match -> MatchCard(card, ctx)
-    is FreeText -> if (card.mode == "explain") FreeTextCard(card, ctx) else LaterCard(ctx)
+    is FreeText -> if (card.mode == "explain") FreeTextCard(card, ctx) else LaterCard(ctx) // Task 8: WritingCard
+    is Vocab -> VocabCard(card, ctx)
+    is Listen -> ListenCard(card, ctx)
+    is Read -> ReadCard(card, ctx)
+    is MinimalPair -> MinimalPairCard(card, ctx)
+    is Dialogue -> DialogueCard(card, ctx)
     else -> CodeCardView(card, ctx)
 }
 
@@ -77,27 +87,31 @@ fun LaterCard(ctx: CardCtx) {
 }
 
 @Composable
-private fun QuizCard(c: Quiz, ctx: CardCtx) {
-    val perm = remember(ctx.seed) { permutation(c.choices.size, ctx.seed) }
-    val multi = c.answer.size > 1
+private fun QuizCard(c: Quiz, ctx: CardCtx) = QuizBlock(c.q, c.choices, c.answer, c.why, ctx.seed) { ctx.onAnswer(it, true) }
+
+/** Một câu trắc nghiệm (quiz, câu hỏi của listen/read): xáo theo [seed], `why` đi theo lựa chọn. */
+@Composable
+fun QuizBlock(q: String, choices: List<String>, answer: List<Int>, why: List<String>, seed: String, onDone: (Boolean) -> Unit) {
+    val perm = remember(seed) { permutation(choices.size, seed) }
+    val multi = answer.size > 1
     var picked by remember { mutableStateOf(setOf<Int>()) }
     var checked by remember { mutableStateOf(false) }
     val code = SpanStyle(fontFamily = JetBrainsMono, color = MaterialTheme.colorScheme.secondary)
     val bold = SpanStyle(fontWeight = FontWeight.Bold)
-    fun check() { checked = true; ctx.onAnswer(quizOk(picked, c.answer), true) }
+    fun check() { checked = true; onDone(quizOk(picked, answer)) }
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Markdown(c.q)
+        Markdown(q)
         if (multi) Text("Chọn tất cả đáp án đúng", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
         perm.forEach { i ->
             val mark = when {
                 !checked -> if (i in picked) Mark.PICKED else Mark.IDLE
-                i in c.answer -> Mark.RIGHT
+                i in answer -> Mark.RIGHT
                 i in picked -> Mark.WRONG
                 else -> Mark.IDLE
             }
             ChoiceRow(
-                inlineMd(c.choices[i], code, bold), mark, enabled = !checked,
-                why = if (checked && mark != Mark.IDLE) c.why.getOrNull(i) else null,
+                inlineMd(choices[i], code, bold), mark, enabled = !checked,
+                why = if (checked && mark != Mark.IDLE) why.getOrNull(i) else null,
                 onClick = {
                     if (checked) return@ChoiceRow
                     if (multi) picked = if (i in picked) picked - i else picked + i

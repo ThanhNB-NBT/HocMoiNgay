@@ -29,6 +29,9 @@ class PlayerViewModel(
 ) : ViewModel() {
     private val _body = MutableStateFlow<LessonBody?>(null)
     val body = _body.asStateFlow()
+    private val _track = MutableStateFlow("code")
+    /** "code" | "english": màu mảng của trình phát, và bài tiếng Anh mới ghi phút theo mạch. */
+    val track = _track.asStateFlow()
     private val _missing = MutableStateFlow(false)
     /** Bài không có trong Room hoặc body hỏng: màn báo lỗi, không quay vòng chờ mãi. */
     val missing = _missing.asStateFlow()
@@ -44,6 +47,7 @@ class PlayerViewModel(
             val l = repo.load(lessonId)
             if (l == null) { _missing.value = true; return@launch }
             _body.value = l.body
+            _track.value = l.track
             _q.value = PlayerQueue(l.body.cards.size)
             repo.start(lessonId)
         }

@@ -70,10 +70,11 @@ fun PlayerScreen(vm: PlayerViewModel, lessonId: String, onBack: () -> Unit, onOp
     val started = vm.started.collectAsStateWithLifecycle().value
     val online = vm.online.collectAsStateWithLifecycle().value
     val states = vm.cardState.collectAsStateWithLifecycle().value
+    val track = vm.track.collectAsStateWithLifecycle().value
     val haptic = LocalHapticFeedback.current
     if (missing) return Placeholder("Không mở được bài", "Bài chưa có trên máy hoặc dữ liệu hỏng. Mở lại app khi có mạng để kéo giáo trình mới.")
     if (body == null) return Box(Modifier.fillMaxSize())
-    ProvideTrack(Track.CODE) {
+    ProvideTrack(if (track == "english") Track.ENGLISH else Track.CODE) {
         Column(Modifier.fillMaxSize().safeDrawingPadding()) {
             TopBar(q.progress, onBack)
             when {

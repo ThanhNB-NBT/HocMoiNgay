@@ -110,7 +110,9 @@ sealed interface Card {
     override val key: String, override val review: Boolean = false, val prompt: String,
     val rounds: List<Int> = listOf(60, 45, 30), @SerialName("must_use") val mustUse: List<String> = emptyList(),
 ) : Card
-@Serializable @SerialName("dialogue") data class Dialogue(override val key: String, override val review: Boolean = false, val turns: List<JsonObject>) : Card
+@Serializable @SerialName("dialogue") data class Dialogue(
+    override val key: String, override val review: Boolean = false, val setting: String = "", val turns: List<JsonObject>,
+) : Card
 @Serializable @SerialName("speak_free") data class SpeakFree(
     override val key: String, override val review: Boolean = false, val prompt: String, val rubric: String = "", val sample: String = "",
 ) : Card
