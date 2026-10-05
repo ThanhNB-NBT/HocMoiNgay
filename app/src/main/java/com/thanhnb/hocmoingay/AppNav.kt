@@ -35,11 +35,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.graphics.vector.addPathNodes
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -52,8 +49,10 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import com.thanhnb.hocmoingay.core.code.LocalAssets
+import com.thanhnb.hocmoingay.core.speech.LocalTts
 import com.thanhnb.hocmoingay.core.ui.LocalShared
 import com.thanhnb.hocmoingay.core.ui.Pushable
+import com.thanhnb.hocmoingay.core.ui.pathIcon
 import com.thanhnb.hocmoingay.feature.Placeholder
 import com.thanhnb.hocmoingay.feature.course.CourseScreen
 import com.thanhnb.hocmoingay.feature.course.CourseViewModel
@@ -61,11 +60,14 @@ import com.thanhnb.hocmoingay.feature.editor.EditorScreen
 import com.thanhnb.hocmoingay.feature.editor.EditorViewModel
 import com.thanhnb.hocmoingay.feature.learn.LearnScreen
 import com.thanhnb.hocmoingay.feature.learn.LearnViewModel
+import com.thanhnb.hocmoingay.feature.placement.PlacementScreen
+import com.thanhnb.hocmoingay.feature.placement.PlacementViewModel
 import com.thanhnb.hocmoingay.feature.player.PlayerScreen
 import com.thanhnb.hocmoingay.feature.player.PlayerViewModel
 import com.thanhnb.hocmoingay.feature.profile.ProfileScreen
 import com.thanhnb.hocmoingay.feature.review.ReviewScreen
 import com.thanhnb.hocmoingay.feature.review.ReviewViewModel
+import com.thanhnb.hocmoingay.feature.settings.AppSettings
 import com.thanhnb.hocmoingay.feature.settings.SettingsScreen
 import com.thanhnb.hocmoingay.feature.settings.SettingsViewModel
 import com.thanhnb.hocmoingay.feature.today.TodayScreen
@@ -87,12 +89,8 @@ private fun tabIcon(k: NavKey): ImageVector = when (k) {
 }
 
 // material-icons-core không có sách/thẻ; path lấy từ Material Icons "menu_book" và "style" (Apache 2.0)
-private val BookIcon = icon("Book", "M21,5c-1.11,-0.35 -2.33,-0.5 -3.5,-0.5c-1.95,0 -4.05,0.4 -5.5,1.5c-1.45,-1.1 -3.55,-1.5 -5.5,-1.5S2.45,4.9 1,6v14.65c0,0.25 0.25,0.5 0.5,0.5c0.1,0 0.15,-0.05 0.25,-0.05C3.1,20.45 5.05,20 6.5,20c1.95,0 4.05,0.4 5.5,1.5c1.35,-0.85 3.8,-1.5 5.5,-1.5c1.65,0 3.35,0.3 4.75,1.05c0.1,0.05 0.15,0.05 0.25,0.05c0.25,0 0.5,-0.25 0.5,-0.5V6C22.4,5.55 21.75,5.25 21,5zM21,18.5c-1.1,-0.35 -2.3,-0.5 -3.5,-0.5c-1.7,0 -4.15,0.65 -5.5,1.5V8c1.35,-0.85 3.8,-1.5 5.5,-1.5c1.2,0 2.4,0.15 3.5,0.5V18.5z")
-private val CardsIcon = icon("Cards", "M2.53,19.65l1.34,0.56v-9.03l-2.43,5.86c-0.41,1.02 0.08,2.19 1.09,2.61zM22.03,15.95L17.07,3.98c-0.31,-0.75 -1.04,-1.21 -1.81,-1.23 -0.26,0 -0.53,0.04 -0.79,0.15L7.1,5.95c-0.75,0.31 -1.21,1.03 -1.23,1.8 -0.01,0.27 0.04,0.54 0.15,0.8l4.96,11.97c0.31,0.76 1.05,1.22 1.83,1.22 0.26,0 0.52,-0.05 0.77,-0.15l7.36,-3.05c1.02,-0.42 1.51,-1.59 1.09,-2.59zM7.88,8.75c-0.55,0 -1,-0.45 -1,-1s0.45,-1 1,-1 1,0.45 1,1 -0.45,1 -1,1zM5.88,19.75c0,1.1 0.9,2 2,2h1.45l-3.45,-8.34v6.34z")
-
-private fun icon(name: String, path: String) = ImageVector.Builder(name, 24.dp, 24.dp, 24f, 24f)
-    .addPath(addPathNodes(path), fill = SolidColor(Color.Black)).build()
-
+private val BookIcon = pathIcon("Book", "M21,5c-1.11,-0.35 -2.33,-0.5 -3.5,-0.5c-1.95,0 -4.05,0.4 -5.5,1.5c-1.45,-1.1 -3.55,-1.5 -5.5,-1.5S2.45,4.9 1,6v14.65c0,0.25 0.25,0.5 0.5,0.5c0.1,0 0.15,-0.05 0.25,-0.05C3.1,20.45 5.05,20 6.5,20c1.95,0 4.05,0.4 5.5,1.5c1.35,-0.85 3.8,-1.5 5.5,-1.5c1.65,0 3.35,0.3 4.75,1.05c0.1,0.05 0.15,0.05 0.25,0.05c0.25,0 0.5,-0.25 0.5,-0.5V6C22.4,5.55 21.75,5.25 21,5zM21,18.5c-1.1,-0.35 -2.3,-0.5 -3.5,-0.5c-1.7,0 -4.15,0.65 -5.5,1.5V8c1.35,-0.85 3.8,-1.5 5.5,-1.5c1.2,0 2.4,0.15 3.5,0.5V18.5z")
+private val CardsIcon = pathIcon("Cards", "M2.53,19.65l1.34,0.56v-9.03l-2.43,5.86c-0.41,1.02 0.08,2.19 1.09,2.61zM22.03,15.95L17.07,3.98c-0.31,-0.75 -1.04,-1.21 -1.81,-1.23 -0.26,0 -0.53,0.04 -0.79,0.15L7.1,5.95c-0.75,0.31 -1.21,1.03 -1.23,1.8 -0.01,0.27 0.04,0.54 0.15,0.8l4.96,11.97c0.31,0.76 1.05,1.22 1.83,1.22 0.26,0 0.52,-0.05 0.77,-0.15l7.36,-3.05c1.02,-0.42 1.51,-1.59 1.09,-2.59zM7.88,8.75c-0.55,0 -1,-0.45 -1,-1s0.45,-1 1,-1 1,0.45 1,1 -0.45,1 -1,1zM5.88,19.75c0,1.1 0.9,2 2,2h1.45l-3.45,-8.34v6.34z")
 /** Thanh tab: viền trên dày; tab đang chọn là khối vàng lê nổi (cùng ngôn ngữ với nút khối), icon nảy lò xo khi được chọn. */
 @Composable
 private fun TabBar(top: NavKey?, onSelect: (NavKey) -> Unit) {
@@ -142,7 +140,7 @@ fun AppNav(graph: AppGraph) {
         },
     ) { pad ->
         SharedTransitionLayout {
-            CompositionLocalProvider(LocalShared provides this, LocalAssets provides graph.assets) {
+            CompositionLocalProvider(LocalShared provides this, LocalAssets provides graph.assets, LocalTts provides graph.tts) {
                 NavDisplay(
                     backStack = backStack,
                     onBack = { backStack.removeLastOrNull() },
@@ -152,7 +150,13 @@ fun AppNav(graph: AppGraph) {
                     entryProvider = entryProvider {
                         entry<Today> { TodayScreen(graph.settings.settings, onOpenLearn = { backStack.selectTab(Learn) }) }
                         entry<Learn> {
-                            LearnScreen(viewModel { LearnViewModel(graph.db.curriculum(), graph.db.learner().observeAllProgress()) }, onOpenCourse = { backStack.add(CourseDetail(it)) })
+                            val s by graph.settings.settings.collectAsStateWithLifecycle(AppSettings())
+                            LearnScreen(
+                                viewModel { LearnViewModel(graph.db.curriculum(), graph.db.learner().observeAllProgress()) },
+                                englishLevel = s.englishLevel,
+                                onOpenCourse = { backStack.add(CourseDetail(it)) },
+                                onPlacement = { backStack.add(Placement) },
+                            )
                         }
                         entry<Review> {
                             ReviewScreen(
@@ -164,7 +168,13 @@ fun AppNav(graph: AppGraph) {
                             ProfileScreen(graph.supabase.auth.currentUserOrNull()?.email, onOpenSettings = { backStack.add(Settings) })
                         }
                         entry<Settings> {
-                            SettingsScreen(viewModel { SettingsViewModel(graph.settings) }, onBack = { backStack.removeLastOrNull() })
+                            SettingsScreen(viewModel { SettingsViewModel(graph.settings) }, onBack = { backStack.removeLastOrNull() }, onPlacement = { backStack.add(Placement) })
+                        }
+                        entry<Placement> {
+                            PlacementScreen(
+                                viewModel { PlacementViewModel(graph.db.curriculum()::placement, graph.settings, graph.scope) },
+                                onBack = { backStack.removeLastOrNull() },
+                            )
                         }
                         entry<CourseDetail> { k ->
                             CourseScreen(

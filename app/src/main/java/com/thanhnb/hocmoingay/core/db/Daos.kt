@@ -20,6 +20,7 @@ interface CurriculumDao {
     fun observeCourses(showSamples: Boolean): Flow<List<CourseEntity>>
     @Query("SELECT * FROM lessons WHERE id = :id") suspend fun lesson(id: String): LessonEntity?
     @Query("SELECT * FROM courses WHERE id = :id") suspend fun course(id: String): CourseEntity?
+    @Query("SELECT * FROM placement_questions WHERE deleted = 0") suspend fun placement(): List<PlacementEntity>
     @Query("SELECT * FROM courses WHERE id = :id") fun observeCourse(id: String): Flow<CourseEntity?>
 }
 

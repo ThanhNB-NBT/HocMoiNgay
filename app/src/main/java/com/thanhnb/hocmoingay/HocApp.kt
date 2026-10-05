@@ -12,6 +12,7 @@ import com.thanhnb.hocmoingay.core.net.CodeApi
 import com.thanhnb.hocmoingay.core.net.NetState
 import com.thanhnb.hocmoingay.core.net.createSupabase
 import com.thanhnb.hocmoingay.core.review.ReviewRepo
+import com.thanhnb.hocmoingay.core.speech.Tts
 import com.thanhnb.hocmoingay.core.sync.RealtimeSync
 import com.thanhnb.hocmoingay.core.sync.RoomCursors
 import com.thanhnb.hocmoingay.core.sync.SupabaseRemote
@@ -68,6 +69,8 @@ class AppGraph(app: Application) {
     val reviews = db.learner().let { l ->
         ReviewRepo(l::dueRecall, l::reviewCardsByKeys, { l.upsertReviewCards(listOf(it)) }, log, dbTx(db), scheduler::afterWrite)
     }
+    /** Tạo lần đầu khi màn cần, trên main thread (TextToSpeech khởi tạo bất đồng bộ). */
+    val tts by lazy { Tts(app) }
     val net = NetState(app, scope)
     val code = CodeApi { fn, body ->
         try {

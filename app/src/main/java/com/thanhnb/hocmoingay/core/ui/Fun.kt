@@ -49,9 +49,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.addPathNodes
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.Role
@@ -62,13 +64,13 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.thanhnb.hocmoingay.core.theme.Ink
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.min
 import kotlin.math.roundToInt
 import kotlin.math.sin
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 /**
  * Hình "bánh quy" [lobes] múi: r(θ) = R·(1 − d + d·cos(n·θ)).
@@ -223,3 +225,7 @@ fun Modifier.rise(index: Int = 0): Modifier = composed {
     LaunchedEffect(Unit) { delay(index * 70L); a.animateTo(1f, tween(500, easing = CubicBezierEasing(0.22f, 1f, 0.36f, 1f))) }
     graphicsLayer { alpha = a.value; translationY = (1 - a.value) * 12.dp.toPx() }
 }
+
+/** Icon một path cho icon mà material-icons-core không có; path lấy từ Material Icons (Apache 2.0). */
+fun pathIcon(name: String, path: String): ImageVector = ImageVector.Builder(name, 24.dp, 24.dp, 24f, 24f)
+    .addPath(addPathNodes(path), fill = SolidColor(Color.Black)).build()

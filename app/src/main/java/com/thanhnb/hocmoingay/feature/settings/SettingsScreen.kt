@@ -1,6 +1,7 @@
 package com.thanhnb.hocmoingay.feature.settings
 
 import android.os.Build
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -28,22 +30,19 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberTimePickerState
-import androidx.compose.material3.Surface
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.runtime.Composable
-import androidx.compose.foundation.BorderStroke
-import com.thanhnb.hocmoingay.core.ui.Pushable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
@@ -51,6 +50,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import com.thanhnb.hocmoingay.core.theme.ThemeMode
 import com.thanhnb.hocmoingay.core.theme.ThemeStyle
+import com.thanhnb.hocmoingay.core.ui.PushButton
+import com.thanhnb.hocmoingay.core.ui.Pushable
 import com.thanhnb.hocmoingay.feature.Placeholder
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
@@ -74,7 +75,7 @@ class SettingsViewModel(private val repo: SettingsRepo) : ViewModel() {
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
-fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit) {
+fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit, onPlacement: () -> Unit) {
     val s by vm.settings.collectAsStateWithLifecycle()
     val loaded by vm.loaded.collectAsStateWithLifecycle()
     var addingTime by rememberSaveable { mutableStateOf(false) }
@@ -139,6 +140,10 @@ fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit) {
                         FilterChip(selected = s.preferredLanguage == k, onClick = { vm.setLanguage(k) }, label = { Text(label) })
                     }
             }
+            }
+            Section("Tiếng Anh") {
+                Hint(s.englishLevel?.let { "Trình độ hiện tại: $it." } ?: "Bạn chưa làm bài xếp lớp.")
+                PushButton(if (s.englishLevel == null) "Làm bài xếp lớp" else "Làm lại bài xếp lớp", onPlacement, Modifier.fillMaxWidth())
             }
             Spacer(Modifier.height(24.dp))
         }

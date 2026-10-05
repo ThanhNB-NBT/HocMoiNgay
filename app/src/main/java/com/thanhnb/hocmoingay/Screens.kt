@@ -9,6 +9,7 @@ import kotlinx.serialization.Serializable
 @Serializable data object Review : Screen
 @Serializable data object Profile : Screen
 @Serializable data object Settings : Screen
+@Serializable data object Placement : Screen
 @Serializable data class CourseDetail(val courseId: String) : Screen
 @Serializable data class LessonPlayer(val lessonId: String) : Screen
 @Serializable data class CodeEditor(val lessonId: String, val cardKey: String) : Screen

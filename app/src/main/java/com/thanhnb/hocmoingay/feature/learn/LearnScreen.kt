@@ -94,7 +94,7 @@ fun courseGlyph(id: String, title: String) = when (id) {
 
 /** Tab Học: danh sách khoá theo mảng, kèm tiến độ; ô ký hiệu + tiêu đề bay sang màn đề cương. */
 @Composable
-fun LearnScreen(vm: LearnViewModel, onOpenCourse: (String) -> Unit) {
+fun LearnScreen(vm: LearnViewModel, englishLevel: String?, onOpenCourse: (String) -> Unit, onPlacement: () -> Unit) {
     val list = vm.courses.collectAsStateWithLifecycle().value
     when {
         list == null -> Box(Modifier.fillMaxSize())
@@ -120,6 +120,9 @@ fun LearnScreen(vm: LearnViewModel, onOpenCourse: (String) -> Unit) {
                             )
                         }
                     }
+                }
+                if (track == Track.ENGLISH) item(key = "placement") {
+                    ProvideTrack(track) { PlacementCard(englishLevel, onPlacement) }
                 }
                 itemsIndexed(items, key = { _, it -> it.course.id }) { i, item ->
                     ProvideTrack(track) { CourseCard(item, Modifier.rise(i)) { onOpenCourse(item.course.id) } }
@@ -157,6 +160,24 @@ private fun CourseCard(item: CourseItem, modifier: Modifier, onClick: () -> Unit
             )
             }
             Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = t.accent)
+        }
+    }
+}
+
+@Composable
+private fun PlacementCard(level: String?, onClick: () -> Unit) {
+    val t = LocalTrack.current
+    if (level != null) {
+        Text(
+            "Trình độ của bạn: $level · làm lại trong Cài đặt", Modifier.padding(horizontal = 20.dp),
+            style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        return
+    }
+    Pushable(onClick, t.container, RoundedCornerShape(24.dp), Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text("Chưa biết bắt đầu từ cấp nào?", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = t.onContainer)
+            Text("Làm bài xếp lớp khoảng 10 phút để app chọn trình độ cho bạn.", style = MaterialTheme.typography.bodyMedium, color = t.onContainer)
         }
     }
 }
