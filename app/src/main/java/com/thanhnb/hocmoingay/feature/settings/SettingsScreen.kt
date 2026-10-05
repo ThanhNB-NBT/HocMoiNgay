@@ -33,6 +33,9 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberTimePickerState
+import androidx.compose.material3.Surface
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -77,7 +80,7 @@ fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Cài đặt") },
+                title = { Text("Cài đặt", fontWeight = FontWeight.Bold) },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Quay lại") } },
             )
         },
@@ -89,46 +92,51 @@ fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit) {
         }
         Column(
             Modifier.padding(pad).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Section("Kiểu giao diện")
-            Segmented(
-                listOf(ThemeStyle.TWO_TONE to "Hai sắc", ThemeStyle.WALLPAPER to "Hình nền", ThemeStyle.IDE to "IDE"),
-                selected = s.theme, onSelect = vm::setTheme,
-                enabled = { it != ThemeStyle.WALLPAPER || Build.VERSION.SDK_INT >= 31 },
-            )
-            if (Build.VERSION.SDK_INT < 31) Hint("Màu theo hình nền cần Android 12 trở lên.")
+            Section("Kiểu giao diện") {
+                Segmented(
+                    listOf(ThemeStyle.TWO_TONE to "Hai sắc", ThemeStyle.WALLPAPER to "Hình nền", ThemeStyle.IDE to "IDE"),
+                    selected = s.theme, onSelect = vm::setTheme,
+                    enabled = { it != ThemeStyle.WALLPAPER || Build.VERSION.SDK_INT >= 31 },
+                )
+                if (Build.VERSION.SDK_INT < 31) Hint("Màu theo hình nền cần Android 12 trở lên.")
+            }
 
-            Section("Sáng hay tối")
-            Segmented(
-                listOf(ThemeMode.SYSTEM to "Hệ thống", ThemeMode.LIGHT to "Sáng", ThemeMode.DARK to "Tối"),
-                selected = s.mode, onSelect = vm::setMode,
-            )
-
-            Section("Thời lượng mỗi ngày")
-            Segmented(listOf(10 to "10 phút", 20 to "20 phút", 30 to "30 phút"), selected = s.dailyMinutes, onSelect = vm::setMinutes)
-
-            Section("Giờ nhắc học")
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                s.reminders.forEach { t ->
-                    InputChip(
-                        selected = false, onClick = { vm.removeTime(t) }, label = { Text(t) },
-                        trailingIcon = { Icon(Icons.Filled.Close, "Xoá giờ nhắc $t", Modifier.size(18.dp)) },
-                    )
-                }
-                AssistChip(
-                    onClick = { addingTime = true }, label = { Text("Thêm giờ") },
-                    leadingIcon = { Icon(Icons.Filled.Add, null, Modifier.size(18.dp)) },
+            Section("Sáng hay tối") {
+                Segmented(
+                    listOf(ThemeMode.SYSTEM to "Hệ thống", ThemeMode.LIGHT to "Sáng", ThemeMode.DARK to "Tối"),
+                    selected = s.mode, onSelect = vm::setMode,
                 )
             }
-            if (s.reminders.isEmpty()) Hint("Chưa có giờ nhắc nào, app sẽ không nhắc học.")
 
-            Section("Ngôn ngữ lập trình ưa thích")
-            Hint("Bài có nhiều ngôn ngữ sẽ mở sẵn ngôn ngữ này.")
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                LANGUAGES.forEach { (k, label) ->
-                    FilterChip(selected = s.preferredLanguage == k, onClick = { vm.setLanguage(k) }, label = { Text(label) })
-                }
+            Section("Thời lượng mỗi ngày") {
+                Segmented(listOf(10 to "10 phút", 20 to "20 phút", 30 to "30 phút"), selected = s.dailyMinutes, onSelect = vm::setMinutes)
+            }
+
+            Section("Giờ nhắc học") {
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    s.reminders.forEach { t ->
+                        InputChip(
+                            selected = false, onClick = { vm.removeTime(t) }, label = { Text(t) },
+                            trailingIcon = { Icon(Icons.Filled.Close, "Xoá giờ nhắc $t", Modifier.size(18.dp)) },
+                        )
+                    }
+                    AssistChip(
+                        onClick = { addingTime = true }, label = { Text("Thêm giờ") },
+                        leadingIcon = { Icon(Icons.Filled.Add, null, Modifier.size(18.dp)) },
+                    )
+            }
+            if (s.reminders.isEmpty()) Hint("Chưa có giờ nhắc nào, app sẽ không nhắc học.")
+            }
+
+            Section("Ngôn ngữ lập trình ưa thích") {
+                Hint("Bài có nhiều ngôn ngữ sẽ mở sẵn ngôn ngữ này.")
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    LANGUAGES.forEach { (k, label) ->
+                        FilterChip(selected = s.preferredLanguage == k, onClick = { vm.setLanguage(k) }, label = { Text(label) })
+                    }
+            }
             }
             Spacer(Modifier.height(24.dp))
         }
@@ -137,11 +145,15 @@ fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit) {
     if (addingTime) TimeDialog(onDismiss = { addingTime = false }, onPick = { vm.addTime(it); addingTime = false })
 }
 
+/** Một nhóm cài đặt trong thẻ bo góc. */
 @Composable
-private fun Section(text: String) {
-    Spacer(Modifier.height(12.dp))
-    Text(text, style = MaterialTheme.typography.titleMedium)
-}
+private fun Section(text: String, content: @Composable () -> Unit) =
+    Surface(color = MaterialTheme.colorScheme.surfaceContainerLow, shape = RoundedCornerShape(24.dp), modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text(text, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            content()
+        }
+    }
 
 @Composable
 private fun Hint(text: String) =

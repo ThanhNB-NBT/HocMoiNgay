@@ -1,34 +1,56 @@
 package com.thanhnb.hocmoingay
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.addPathNodes
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import com.thanhnb.hocmoingay.feature.Placeholder
-import com.thanhnb.hocmoingay.feature.TodayPlaceholder
 import com.thanhnb.hocmoingay.feature.learn.LearnScreen
 import com.thanhnb.hocmoingay.feature.learn.LearnViewModel
+import com.thanhnb.hocmoingay.feature.profile.ProfileScreen
 import com.thanhnb.hocmoingay.feature.settings.SettingsScreen
 import com.thanhnb.hocmoingay.feature.settings.SettingsViewModel
+import com.thanhnb.hocmoingay.feature.today.TodayScreen
+import io.github.jan.supabase.auth.auth
 
 private fun tabLabel(k: NavKey) = when (k) {
     Today -> "Hôm nay"
@@ -39,9 +61,46 @@ private fun tabLabel(k: NavKey) = when (k) {
 
 private fun tabIcon(k: NavKey): ImageVector = when (k) {
     Today -> Icons.Filled.Home
-    Learn -> Icons.AutoMirrored.Filled.List
-    Review -> Icons.Filled.Refresh
+    Learn -> BookIcon
+    Review -> CardsIcon
     else -> Icons.Filled.Person
+}
+
+// material-icons-core không có sách/thẻ; path lấy từ Material Icons "menu_book" và "style" (Apache 2.0)
+private val BookIcon = icon("Book", "M21,5c-1.11,-0.35 -2.33,-0.5 -3.5,-0.5c-1.95,0 -4.05,0.4 -5.5,1.5c-1.45,-1.1 -3.55,-1.5 -5.5,-1.5S2.45,4.9 1,6v14.65c0,0.25 0.25,0.5 0.5,0.5c0.1,0 0.15,-0.05 0.25,-0.05C3.1,20.45 5.05,20 6.5,20c1.95,0 4.05,0.4 5.5,1.5c1.35,-0.85 3.8,-1.5 5.5,-1.5c1.65,0 3.35,0.3 4.75,1.05c0.1,0.05 0.15,0.05 0.25,0.05c0.25,0 0.5,-0.25 0.5,-0.5V6C22.4,5.55 21.75,5.25 21,5zM21,18.5c-1.1,-0.35 -2.3,-0.5 -3.5,-0.5c-1.7,0 -4.15,0.65 -5.5,1.5V8c1.35,-0.85 3.8,-1.5 5.5,-1.5c1.2,0 2.4,0.15 3.5,0.5V18.5z")
+private val CardsIcon = icon("Cards", "M2.53,19.65l1.34,0.56v-9.03l-2.43,5.86c-0.41,1.02 0.08,2.19 1.09,2.61zM22.03,15.95L17.07,3.98c-0.31,-0.75 -1.04,-1.21 -1.81,-1.23 -0.26,0 -0.53,0.04 -0.79,0.15L7.1,5.95c-0.75,0.31 -1.21,1.03 -1.23,1.8 -0.01,0.27 0.04,0.54 0.15,0.8l4.96,11.97c0.31,0.76 1.05,1.22 1.83,1.22 0.26,0 0.52,-0.05 0.77,-0.15l7.36,-3.05c1.02,-0.42 1.51,-1.59 1.09,-2.59zM7.88,8.75c-0.55,0 -1,-0.45 -1,-1s0.45,-1 1,-1 1,0.45 1,1 -0.45,1 -1,1zM5.88,19.75c0,1.1 0.9,2 2,2h1.45l-3.45,-8.34v6.34z")
+
+private fun icon(name: String, path: String) = ImageVector.Builder(name, 24.dp, 24.dp, 24f, 24f)
+    .addPath(addPathNodes(path), fill = SolidColor(Color.Black)).build()
+
+/** Thanh tab nổi: tab đang chọn là viên thuốc màu nhấn có chữ, tab khác chỉ có icon. */
+@Composable
+private fun PillNavBar(top: NavKey?, onSelect: (NavKey) -> Unit) {
+    val cs = MaterialTheme.colorScheme
+    Surface(
+        color = cs.surfaceContainerHigh, shape = CircleShape, shadowElevation = 8.dp,
+        modifier = Modifier.navigationBarsPadding().padding(start = 16.dp, end = 16.dp, bottom = 12.dp, top = 4.dp).fillMaxWidth(),
+    ) {
+        Row(Modifier.padding(6.dp).selectableGroup(), horizontalArrangement = Arrangement.SpaceBetween) {
+            TABS.forEach { tab ->
+                val sel = top == tab
+                val bg by animateColorAsState(if (sel) cs.primary else Color.Transparent, label = "tabBg")
+                val fg by animateColorAsState(if (sel) cs.onPrimary else cs.onSurfaceVariant, label = "tabFg")
+                Row(
+                    Modifier.clip(CircleShape).background(bg)
+                        .selectable(sel, role = Role.Tab, onClick = { onSelect(tab) })
+                        .heightIn(min = 52.dp).padding(horizontal = 18.dp).animateContentSize(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(tabIcon(tab), contentDescription = if (sel) null else tabLabel(tab), tint = fg, modifier = Modifier.size(24.dp))
+                    if (sel) {
+                        Spacer(Modifier.width(8.dp))
+                        Text(tabLabel(tab), color = fg, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold, maxLines = 1)
+                    }
+                }
+            }
+        }
+    }
 }
 
 @Composable
@@ -52,16 +111,7 @@ fun AppNav(graph: AppGraph) {
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         bottomBar = {
-            if (top in TABS) NavigationBar {
-                TABS.forEach { tab ->
-                    NavigationBarItem(
-                        selected = top == tab,
-                        onClick = { backStack.selectTab(tab) },
-                        icon = { Icon(tabIcon(tab), contentDescription = null) },
-                        label = { Text(tabLabel(tab)) },
-                    )
-                }
-            }
+            if (top in TABS) PillNavBar(top) { backStack.selectTab(it) }
         },
     ) { pad ->
         NavDisplay(
@@ -69,21 +119,21 @@ fun AppNav(graph: AppGraph) {
             onBack = { backStack.removeLastOrNull() },
             modifier = Modifier.padding(pad).consumeWindowInsets(pad),
             entryProvider = entryProvider {
-                entry<Today> { TodayPlaceholder() }
+                entry<Today> { TodayScreen(graph.settings.settings, onOpenLearn = { backStack.selectTab(Learn) }) }
                 entry<Learn> {
                     LearnScreen(viewModel { LearnViewModel(graph.db.curriculum()) }, onOpenCourse = { backStack.add(CourseDetail(it)) })
                 }
-                entry<Review> { Placeholder("Ôn tập", "Thẻ đến hạn — giai đoạn d") }
+                entry<Review> {
+                    Placeholder("Chưa có thẻ cần ôn", "Học xong bài nào, thẻ ôn của bài đó sẽ được xếp lịch và hiện ở đây.", icon = CardsIcon)
+                }
                 entry<Profile> {
-                    Placeholder("Hồ sơ", "Streak, XP, heatmap — giai đoạn e") {
-                        FilledTonalButton(onClick = { backStack.add(Settings) }) { Text("Cài đặt") }
-                    }
+                    ProfileScreen(graph.supabase.auth.currentUserOrNull()?.email, onOpenSettings = { backStack.add(Settings) })
                 }
                 entry<Settings> {
                     SettingsScreen(viewModel { SettingsViewModel(graph.settings) }, onBack = { backStack.removeLastOrNull() })
                 }
                 entry<CourseDetail> { k ->
-                    Placeholder("Khoá ${k.courseId}", "Đề cương — giai đoạn c") {
+                    Placeholder("Khoá ${k.courseId}", "Đề cương — giai đoạn c", icon = BookIcon) {
                         Button(onClick = { backStack.add(LessonPlayer("${k.courseId}/nhap-mon/lam-quen/xin-chao")) }) { Text("Mở thử trình phát bài") }
                     }
                 }
