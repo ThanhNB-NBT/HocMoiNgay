@@ -178,7 +178,7 @@ private fun Done(score: Int, onBack: () -> Unit) {
         Critter(Modifier.size(96.dp))
         Text("Xong bài!", style = MaterialTheme.typography.displaySmall)
         Pushable(null, f.coralContainer, RoundedCornerShape(32.dp), Modifier.fillMaxWidth(), edge = f.coral) {
-            Column(Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(Modifier.fillMaxWidth().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 Row(verticalAlignment = Alignment.Bottom) {
                     TickUpNumber(score, MaterialTheme.typography.displayLarge.copy(fontWeight = FontWeight.Bold), f.onCoralContainer)
                     Text("%", style = MaterialTheme.typography.headlineMedium, color = f.onCoralContainer)

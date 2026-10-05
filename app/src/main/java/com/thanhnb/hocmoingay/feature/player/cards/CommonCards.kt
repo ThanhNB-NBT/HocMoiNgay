@@ -59,7 +59,7 @@ fun CardView(card: Card, ctx: CardCtx) = when (card) {
     is Quiz -> QuizCard(card, ctx)
     is Match -> MatchCard(card, ctx)
     is FreeText -> if (card.mode == "explain") FreeTextCard(card, ctx) else LaterCard(ctx)
-    else -> LaterCard(ctx) // Task 10 thay bằng CodeCardView(card, ctx)
+    else -> CodeCardView(card, ctx)
 }
 
 /** Card không chấm: báo "đúng, không tính điểm" ngay, để thanh dưới hiện nút Tiếp. */
