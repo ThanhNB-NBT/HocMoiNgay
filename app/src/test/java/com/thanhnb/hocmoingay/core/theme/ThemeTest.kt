@@ -57,4 +57,13 @@ class ThemeTest {
         assertTrue(isDark(ThemeMode.DARK, systemDark = false))
         assertFalse(isDark(ThemeMode.LIGHT, systemDark = true))
     }
+
+    @Test fun mauToCodeDatTuongPhan() {
+        for (dark in listOf(false, true)) {
+            val s = twoToneScheme(dark)
+            for ((ten, c) in listOf("từ khoá" to s.secondary, "chuỗi" to s.tertiary, "số" to s.primary, "comment" to s.onSurfaceVariant)) {
+                assertTrue("$dark $ten", ratio(c, s.surfaceContainerLowest) >= 4.5)
+            }
+        }
+    }
 }
