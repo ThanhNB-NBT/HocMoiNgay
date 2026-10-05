@@ -5,6 +5,10 @@ import androidx.work.WorkManager
 import com.thanhnb.hocmoingay.core.auth.AuthRepo
 import com.thanhnb.hocmoingay.core.db.HocDb
 import com.thanhnb.hocmoingay.core.lesson.LessonRepo
+import com.thanhnb.hocmoingay.core.net.ApiHttp
+import com.thanhnb.hocmoingay.core.net.Assets
+import com.thanhnb.hocmoingay.core.net.CodeApi
+import com.thanhnb.hocmoingay.core.net.NetState
 import com.thanhnb.hocmoingay.core.net.createSupabase
 import com.thanhnb.hocmoingay.core.sync.RealtimeSync
 import com.thanhnb.hocmoingay.core.sync.RoomCursors
@@ -15,7 +19,12 @@ import com.thanhnb.hocmoingay.core.sync.dbTx
 import com.thanhnb.hocmoingay.core.sync.syncTables
 import com.thanhnb.hocmoingay.feature.settings.SettingsRepo
 import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.exceptions.RestException
+import io.github.jan.supabase.functions.functions
 import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.storage.storage
+import io.ktor.client.statement.bodyAsText
+import java.io.File
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -51,4 +60,13 @@ class AppGraph(app: Application) {
         userId = auth::currentUserId,
         afterWrite = scheduler::afterWrite,
     )
+    val net = NetState(app, scope)
+    val code = CodeApi { fn, body ->
+        try {
+            supabase.functions.invoke(fn, body).bodyAsText()
+        } catch (e: RestException) {
+            throw ApiHttp(e.statusCode, "${e.error} ${e.description.orEmpty()}")
+        }
+    }
+    val assets = Assets(File(app.cacheDir, "assets")) { supabase.storage.from("content").downloadAuthenticated(it) }
 }
