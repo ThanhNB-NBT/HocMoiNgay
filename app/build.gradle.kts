@@ -11,11 +11,21 @@ plugins {
 }
 
 // local.properties (gitignore): sdk.dir + ANON_KEY=... (Task 6 lấy từ .env trên box)
-// + TEST_EMAIL/TEST_PASSWORD (tuỳ chọn, chép từ ~/hocmoingay/server/.test-user) cho nút điền nhanh của bản debug
 val local = Properties().apply {
     rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use(::load)
 }
-fun javaStr(v: String) = "\"" + v.trim().removeSurrounding("'").removeSurrounding("\"").replace("\\", "\\\\").replace("\"", "\\\"") + "\""
+// Môi trường dev: server Supabase local do server/dev-up.sh dựng, secret + tài khoản test ở server/.env.dev (gitignore)
+val devEnv = Properties().apply {
+    rootProject.file("server/.env.dev").takeIf { it.exists() }?.inputStream()?.use(::load)
+}
+fun javaStr(v: String) = "\"" + v.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
+fun com.android.build.api.dsl.ApplicationBuildType.useDevServer() {
+    buildConfigField("String", "SUPABASE_URL", javaStr("http://10.0.2.2:8100")) // localhost của laptop nhìn từ emulator
+    buildConfigField("String", "SUPABASE_ANON_KEY", javaStr(devEnv.getProperty("ANON_KEY", "")))
+    buildConfigField("String", "DEV_EMAIL", javaStr(devEnv.getProperty("DEV_TEST_EMAIL", "")))
+    buildConfigField("String", "DEV_PASSWORD", javaStr(devEnv.getProperty("DEV_TEST_PASSWORD", "")))
+    manifestPlaceholders["cleartext"] = "true" // server dev chạy http
+}
 
 android {
     namespace = "com.thanhnb.hocmoingay"
@@ -33,19 +43,23 @@ android {
         // Production (release) luôn rỗng → không có nút điền tài khoản test
         buildConfigField("String", "DEV_EMAIL", "\"\"")
         buildConfigField("String", "DEV_PASSWORD", "\"\"")
+        manifestPlaceholders["cleartext"] = "false"
     }
 
     buildTypes {
-        debug {
-            buildConfigField("String", "DEV_EMAIL", javaStr(local.getProperty("TEST_EMAIL", "")))
-            buildConfigField("String", "DEV_PASSWORD", javaStr(local.getProperty("TEST_PASSWORD", "")))
-        }
+        debug { useDevServer() }
         release {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             // ponytail: ký bằng debug key để chạy thử bản R8 trên AVD; keystore thật khi phát hành
             signingConfig = signingConfigs.getByName("debug")
+        }
+        // Giống hệt release (R8 + shrink) nhưng trỏ server dev: kiểm R8/serializer mà không đụng production
+        create("devRelease") {
+            initWith(getByName("release"))
+            matchingFallbacks += "release"
+            useDevServer()
         }
     }
 

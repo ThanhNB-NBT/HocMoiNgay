@@ -1,5 +1,6 @@
 server/.env
 server/.env.test
+server/.env.dev
 server/volumes/db/data/
 server/volumes/storage/
 server/volumes/piston/
