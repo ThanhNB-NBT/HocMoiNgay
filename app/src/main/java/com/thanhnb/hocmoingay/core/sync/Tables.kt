@@ -9,14 +9,14 @@ import com.thanhnb.hocmoingay.core.db.ProgressEntity
 import com.thanhnb.hocmoingay.core.db.ReviewCardEntity
 import com.thanhnb.hocmoingay.core.db.SettingsEntity
 
-/** Thứ tự = thứ tự đẩy/kéo. onConflict = khoá chính (hoặc unique) trên server. */
+/**
+ * Thứ tự = thứ tự đẩy/kéo. Bảng người học trước: máy mới kéo settings về ngay, không phải đợi tải xong giáo trình.
+ * onConflict = khoá chính (hoặc unique) trên server.
+ */
 fun syncTables(db: HocDb): List<TableSync> {
     val c = db.curriculum()
     val l = db.learner()
     return listOf(
-        CurriculumTable("courses", CourseEntity.serializer(), { it.id }, { it.deleted }, c::upsertCourses, c::deleteCourses),
-        CurriculumTable("lessons", LessonEntity.serializer(), { it.id }, { it.deleted }, c::upsertLessons, c::deleteLessons),
-        CurriculumTable("placement_questions", PlacementEntity.serializer(), { it.id }, { it.deleted }, c::upsertPlacement, c::deletePlacement),
         LearnerTable("progress", "user_id,lesson_id", ProgressEntity.serializer(), { it.lessonId },
             l::dirtyProgress, l::progressByKeys, l::upsertProgress, l::cleanProgress),
         LearnerTable("review_cards", "id", ReviewCardEntity.serializer(), { it.id },
@@ -25,5 +25,8 @@ fun syncTables(db: HocDb): List<TableSync> {
             l::dirtyDailyLog, l::dailyLogByKeys, l::upsertDailyLog, l::cleanDailyLog),
         LearnerTable("settings", "user_id", SettingsEntity.serializer(), { it.userId },
             l::dirtySettings, l::settingsByKeys, l::upsertSettings, l::cleanSettings),
+        CurriculumTable("courses", CourseEntity.serializer(), { it.id }, { it.deleted }, c::upsertCourses, c::deleteCourses),
+        CurriculumTable("lessons", LessonEntity.serializer(), { it.id }, { it.deleted }, c::upsertLessons, c::deleteLessons),
+        CurriculumTable("placement_questions", PlacementEntity.serializer(), { it.id }, { it.deleted }, c::upsertPlacement, c::deletePlacement),
     )
 }

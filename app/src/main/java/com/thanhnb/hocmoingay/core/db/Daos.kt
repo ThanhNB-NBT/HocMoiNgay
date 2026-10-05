@@ -63,6 +63,7 @@ abstract class LearnerDao {
 @Dao
 interface SyncStateDao {
     @Query("SELECT cursor FROM sync_state WHERE tableName = :table") suspend fun cursor(table: String): String?
+    @Query("SELECT cursor FROM sync_state WHERE tableName = :table") fun observeCursor(table: String): Flow<String?>
     @Upsert suspend fun put(row: SyncStateEntity)
     @Query("DELETE FROM sync_state WHERE tableName IN (:tables)") suspend fun clear(tables: List<String>)
 }

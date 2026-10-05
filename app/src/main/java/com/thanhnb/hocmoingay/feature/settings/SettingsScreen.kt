@@ -46,12 +46,14 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import com.thanhnb.hocmoingay.core.theme.ThemeMode
 import com.thanhnb.hocmoingay.core.theme.ThemeStyle
+import com.thanhnb.hocmoingay.feature.Placeholder
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class SettingsViewModel(private val repo: SettingsRepo) : ViewModel() {
     val settings = repo.settings.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AppSettings())
+    val loaded = repo.loaded.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), true)
 
     private fun edit(f: (AppSettings) -> AppSettings) {
         viewModelScope.launch { repo.update(f) }
@@ -69,6 +71,7 @@ class SettingsViewModel(private val repo: SettingsRepo) : ViewModel() {
 @Composable
 fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit) {
     val s by vm.settings.collectAsStateWithLifecycle()
+    val loaded by vm.loaded.collectAsStateWithLifecycle()
     var addingTime by rememberSaveable { mutableStateOf(false) }
 
     Scaffold(
@@ -79,6 +82,11 @@ fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit) {
             )
         },
     ) { pad ->
+        if (!loaded) {
+            // Máy mới/cài lại: chưa kéo cài đặt trên server về thì chưa cho sửa (SettingsRepo cũng chặn ghi)
+            Placeholder("Đang tải cài đặt", "Cài đặt của bạn được tải về khi có mạng.", Modifier.padding(pad))
+            return@Scaffold
+        }
         Column(
             Modifier.padding(pad).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),

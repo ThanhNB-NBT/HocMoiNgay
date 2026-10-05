@@ -128,4 +128,22 @@ class SyncEngineTest {
         assertEquals(setOf("python"), courses.keys)
         assertEquals("[]", courses["python"]!!.outline)
     }
+
+    // SettingsRepo dựa vào cursor để biết đã kéo bảng ít nhất một lần, kể cả khi server chưa có hàng nào
+    @Test fun keoRongVanDanhDauDaKeo() = runTest {
+        engine().syncAll()
+        assertEquals("1970-01-01T00:00:00Z", cursors.m["daily_log"])
+    }
+
+    @Test fun dayLoiMotBangVanKeoCacBangKhac() = runTest {
+        local["d1"] = DailyLogEntity(day = "d1", userId = "u1", updatedAt = 100, dirty = true)
+        remote.onUpsert = { throw IllegalStateException("23514 check_violation") }
+        remote.server["courses"] = mutableListOf(
+            buildJsonObject { put("id", "python"); put("track", "code"); put("title", "Python"); put("outline", kotlinx.serialization.json.JsonArray(emptyList())); put("deleted", false); put("synced_at", "2026-10-05T00:00:02Z") },
+        )
+        val e = runCatching { engine().syncAll() }.exceptionOrNull()
+        assertTrue("lỗi vẫn phải ném ra để WorkManager thử lại", e is IllegalStateException)
+        assertEquals(setOf("python"), courses.keys)
+        assertTrue(local["d1"]!!.dirty)
+    }
 }

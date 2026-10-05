@@ -4,6 +4,7 @@ import com.thanhnb.hocmoingay.core.db.LearnerRow
 import com.thanhnb.hocmoingay.core.net.SyncJson
 import com.thanhnb.hocmoingay.core.net.parseTs
 import java.time.Instant
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.KSerializer
@@ -81,8 +82,20 @@ class SyncEngine(
 
     /** spec §7.3: đẩy dirty → kéo theo synced_at → gộp. */
     suspend fun syncAll() = lock.withLock {
-        tables.forEach { it.push(remote) }
+        // Một hàng bị server từ chối mãi (CHECK, RLS…) không được chặn việc kéo của mọi bảng;
+        // vẫn ném lỗi ở cuối để WorkManager thử lại, hàng đó giữ dirty.
+        var error: Exception? = null
+        for (t in tables) {
+            try {
+                t.push(remote)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                error?.addSuppressed(e) ?: run { error = e }
+            }
+        }
         tables.forEach { pull(it) }
+        error?.let { throw it }
     }
 
     /** Sự kiện realtime đi qua đúng hàm gộp của lượt kéo. */
@@ -110,6 +123,8 @@ class SyncEngine(
             if (page.size < pageSize || last == since) break
             since = last
         }
+        // Đánh dấu "đã kéo ít nhất một lần" kể cả khi server chưa có hàng nào (SettingsRepo dựa vào đây)
+        if (best == null) cursors.put(t.name, Instant.EPOCH.toString())
     }
 
     private companion object {

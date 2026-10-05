@@ -10,6 +10,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonObject
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -17,10 +18,11 @@ class SettingsTest {
     private val row = MutableStateFlow<SettingsEntity?>(null)
     private var writes = 0
     private var scheduled = 0
+    private val pulled = MutableStateFlow(true)
 
     private fun repo(uid: String? = "u1", clock: Long = 1_000L) = SettingsRepo(
         observeRow = row, getRow = { row.value }, putRow = { row.value = it; writes++ },
-        userId = { uid }, afterWrite = { scheduled++ }, now = { clock },
+        userId = { uid }, afterWrite = { scheduled++ }, now = { clock }, observePulled = pulled,
     )
 
     @Test fun chuaCoHangThiTraMacDinhVaKhongGhi() = runTest {
@@ -79,5 +81,21 @@ class SettingsTest {
     @Test fun gioNhacSapXepKhongTrung() {
         assertEquals(listOf("07:30", "20:00"), addReminder(listOf("20:00"), "07:30"))
         assertEquals(listOf("20:00"), addReminder(listOf("20:00"), "20:00"))
+    }
+
+    // Máy mới/cài lại: sửa trước lần kéo đầu tiên sẽ ghi mặc định + 1 thay đổi, mốc mới hơn nên đè hết cài đặt trên server
+    @Test fun chuaKeoLanNaoThiKhongChoSua() = runTest {
+        pulled.value = false
+        val r = repo()
+        r.update { it.copy(dailyMinutes = 30) }
+        assertEquals("mặc định không được đè cài đặt trên server", 0, writes)
+        assertFalse(r.loaded.first())
+    }
+
+    @Test fun daCoHangThiSuaDuocDuChuaDanhDauKeo() = runTest {
+        pulled.value = false
+        row.value = SettingsEntity(userId = "u1", data = "{}", updatedAt = 1)
+        repo().update { it.copy(dailyMinutes = 30) }
+        assertEquals(1, writes)
     }
 }

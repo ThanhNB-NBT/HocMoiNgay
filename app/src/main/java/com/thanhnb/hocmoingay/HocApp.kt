@@ -17,6 +17,7 @@ import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.map
 
 class HocApp : Application() {
     val graph by lazy { AppGraph(this) }
@@ -32,6 +33,9 @@ class AppGraph(app: Application) {
     val scheduler = SyncScheduler(WorkManager.getInstance(app))
     val realtime = RealtimeSync(supabase, sync)
     val settings = db.learner().let { l ->
-        SettingsRepo(l.observeSettings(), l::settings, { l.upsertSettings(listOf(it)) }, auth::currentUserId, scheduler::afterWrite)
+        SettingsRepo(
+            l.observeSettings(), l::settings, { l.upsertSettings(listOf(it)) }, auth::currentUserId, scheduler::afterWrite,
+            observePulled = db.syncState().observeCursor("settings").map { it != null },
+        )
     }
 }
