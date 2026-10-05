@@ -22,6 +22,7 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
@@ -125,6 +126,7 @@ class EditorViewModel(
                 repo.updateCard(lessonId, cardKey) { s ->
                     JsonObject(
                         s + if (pass) mapOf("pass" to JsonPrimitive(true), "lang" to JsonPrimitive(lang), "hints" to JsonPrimitive(_ui.value.hints))
+                        else if ((s["pass"] as? JsonPrimitive)?.booleanOrNull == true) emptyMap() // đã đạt rồi: fails chỉ đếm trượt trước lần đạt đầu
                         else mapOf("fails" to JsonPrimitive(s.int("fails") + 1)),
                     )
                 }

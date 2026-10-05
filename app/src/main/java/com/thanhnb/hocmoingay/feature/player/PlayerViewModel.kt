@@ -6,7 +6,9 @@ import com.thanhnb.hocmoingay.core.db.ProgressEntity
 import com.thanhnb.hocmoingay.core.lesson.LessonBody
 import com.thanhnb.hocmoingay.core.lesson.LessonRepo
 import com.thanhnb.hocmoingay.core.lesson.cardStateOf
+import com.thanhnb.hocmoingay.core.log.DailyLogRepo
 import com.thanhnb.hocmoingay.core.net.CodeApi
+import com.thanhnb.hocmoingay.core.review.MINUTE_MS
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,6 +28,8 @@ class PlayerViewModel(
     val online: StateFlow<Boolean>,
     progress: Flow<ProgressEntity?>,
     private val writeScope: CoroutineScope,              // graph.scope: ghi xong bài/card không bị huỷ khi đóng màn
+    private val log: DailyLogRepo? = null,               // null ở test cũ: không ghi mạch
+    private val now: () -> Long = System::currentTimeMillis,
 ) : ViewModel() {
     private val _body = MutableStateFlow<LessonBody?>(null)
     val body = _body.asStateFlow()
@@ -53,9 +57,20 @@ class PlayerViewModel(
         }
     }
 
-    fun start() { _started.value = true }
+    private var shownAt = 0L
+
+    fun start() { _started.value = true; shownAt = now() }
     fun answer(ok: Boolean, graded: Boolean) = _q.update { it.answer(ok, graded) }
     fun next() {
+        val t = now()
+        val card = _q.value.current?.let { _body.value?.cards?.getOrNull(it) }
+        val strand = card?.takeIf { _track.value == "english" }?.let(::strandOf)
+        if (strand != null && log != null) {
+            // Quyết định 5: mỗi card tối đa 5 phút, để máy treo không cộng vô hạn
+            val minutes = minOf(t - shownAt, 5 * MINUTE_MS) / 60_000.0
+            writeScope.launch { log.addStrands(t, mapOf(strand to minutes)) }
+        }
+        shownAt = t
         _q.update { it.next() }
         if (_q.value.finished) writeScope.launch { repo.finish(lessonId, _q.value.score) }
     }

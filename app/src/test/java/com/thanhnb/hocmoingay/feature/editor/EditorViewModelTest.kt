@@ -130,4 +130,13 @@ class EditorViewModelTest {
         v.flush(); advanceUntilIdle()
         assertEquals("fn two_sum() { todo!() }", draftMap[Triple(id, "two_sum", "rust")])
     }
+
+    @Test fun daDatRoiNopTruotKhongTangFails() = runTest(d) {
+        val v = vm(); advanceUntilIdle()
+        v.submit(); advanceUntilIdle() // đạt
+        submitResult = """{"compiled":true,"tests":[{"name":"a","pass":false,"time_ms":1,"hidden":false}],"time_ms":1}"""
+        v.submit(); advanceUntilIdle() // học lại, nộp trượt
+        assertEquals(null, state()["fails"])
+        assertEquals("true", state()["pass"]!!.jsonPrimitive.content)
+    }
 }

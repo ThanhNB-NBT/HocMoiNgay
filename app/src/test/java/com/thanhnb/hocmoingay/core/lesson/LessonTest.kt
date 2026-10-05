@@ -62,4 +62,10 @@ class LessonTest {
         assertNull(parseLesson("[1,2]") { })
         assertNull(parseLesson("không phải json") { })
     }
+
+    @Test fun coTheOnKhiCoCardReviewHoacGhiChu() {
+        assertEquals(true, parseLesson("""{"title":"t","cards":[{"key":"a","type":"explain","md":"m","review":true}]}""")!!.hasReview)
+        assertEquals(true, parseLesson("""{"title":"t","cards":[],"review":[{"key":"r","front":"F","back":"B"}]}""")!!.hasReview)
+        assertEquals(false, parseLesson("""{"title":"t","cards":[{"key":"a","type":"explain","md":"m"}]}""")!!.hasReview)
+    }
 }
