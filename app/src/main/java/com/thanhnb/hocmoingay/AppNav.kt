@@ -169,7 +169,7 @@ fun AppNav(graph: AppGraph) {
                         }
                         entry<LessonPlayer> { k ->
                             PlayerScreen(
-                                viewModel { PlayerViewModel(k.lessonId, graph.lessons, graph.code, graph.net.online, graph.db.learner().observeProgress(k.lessonId)) },
+                                viewModel { PlayerViewModel(k.lessonId, graph.lessons, graph.code, graph.net.online, graph.db.learner().observeProgress(k.lessonId), graph.scope) },
                                 k.lessonId, onBack = { backStack.removeLastOrNull() },
                                 onOpenEditor = { key -> backStack.add(CodeEditor(k.lessonId, key)) },
                             )

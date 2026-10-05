@@ -8,6 +8,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
+import kotlinx.serialization.json.JsonObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -58,6 +59,22 @@ class LessonRepoTest {
         assertEquals("_sample-code", c.courseId)
         assertEquals(2_000L, c.due)
         assertTrue(c.dirty)
+    }
+
+    @Test fun baiProblemDeSauThiChuaXong() = runTest {
+        val pid = "_sample-code/nhap-mon/mau/bai-problem"
+        val pbody = """{"title":"t","kind":"problem","cards":[{"key":"e","type":"explain","md":"m"},
+            {"key":"two_sum","type":"code","prompt_md":"p","langs":["python"],"tests":[]}]}"""
+        val r = LessonRepo(
+            lesson = { LessonEntity(pid, "_sample-code", body = pbody) }, track = { "code" },
+            getProgress = { progress[it] }, putProgress = { progress[it.lessonId] = it },
+            cardsByIds = { emptyList() }, putCards = {}, tx = { it() }, userId = { "u1" }, afterWrite = {}, now = { clock },
+        )
+        r.start(pid); r.finish(pid, 100) // bấm "Để sau" ở card code rồi đi hết bài
+        assertEquals("started", progress.getValue(pid).status)
+        r.updateCard(pid, "two_sum") { JsonObject(it + ("pass" to JsonPrimitive(true))) }
+        r.finish(pid, 100)
+        assertEquals("done", progress.getValue(pid).status)
     }
 
     @Test fun hocLaiGiuDoneVaKhongDeThe() = runTest {

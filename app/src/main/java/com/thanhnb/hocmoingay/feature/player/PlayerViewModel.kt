@@ -7,6 +7,7 @@ import com.thanhnb.hocmoingay.core.lesson.LessonBody
 import com.thanhnb.hocmoingay.core.lesson.LessonRepo
 import com.thanhnb.hocmoingay.core.lesson.cardStateOf
 import com.thanhnb.hocmoingay.core.net.CodeApi
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -24,6 +25,7 @@ class PlayerViewModel(
     val api: CodeApi,
     val online: StateFlow<Boolean>,
     progress: Flow<ProgressEntity?>,
+    private val writeScope: CoroutineScope,              // graph.scope: ghi xong bài/card không bị huỷ khi đóng màn
 ) : ViewModel() {
     private val _body = MutableStateFlow<LessonBody?>(null)
     val body = _body.asStateFlow()
@@ -51,7 +53,7 @@ class PlayerViewModel(
     fun answer(ok: Boolean, graded: Boolean) = _q.update { it.answer(ok, graded) }
     fun next() {
         _q.update { it.next() }
-        if (_q.value.finished) viewModelScope.launch { repo.finish(lessonId, _q.value.score) }
+        if (_q.value.finished) writeScope.launch { repo.finish(lessonId, _q.value.score) }
     }
-    fun saveCard(key: String, value: JsonObject) { viewModelScope.launch { repo.updateCard(lessonId, key) { value } } }
+    fun saveCard(key: String, value: JsonObject) { writeScope.launch { repo.updateCard(lessonId, key) { value } } }
 }

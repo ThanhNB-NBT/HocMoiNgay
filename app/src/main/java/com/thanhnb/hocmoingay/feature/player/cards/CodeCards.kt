@@ -249,7 +249,8 @@ private fun CodeTaskCard(c: CodeTask, ctx: CardCtx) {
     val f = LocalFun.current
     val pass = (ctx.state["pass"] as? JsonPrimitive)?.booleanOrNull == true
     val lang = (ctx.state["lang"] as? JsonPrimitive)?.contentOrNull
-    LaunchedEffect(pass) { if (pass && !ctx.answered) ctx.onAnswer(true, false) }
+    // active làm khoá: pager dựng sẵn trang kế khi chưa tới lượt, học lại bài đã đạt thì effect phải chạy lại lúc tới trang
+    LaunchedEffect(pass, ctx.active) { if (pass && ctx.active && !ctx.answered) ctx.onAnswer(true, false) }
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(if (c.starter != null) "Sửa code mẫu" else "Tự viết code", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.Bold)
         Markdown(c.promptMd)

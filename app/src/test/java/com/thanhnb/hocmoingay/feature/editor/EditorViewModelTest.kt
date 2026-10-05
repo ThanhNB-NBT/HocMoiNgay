@@ -1,5 +1,8 @@
 package com.thanhnb.hocmoingay.feature.editor
 
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.cancel
 import com.thanhnb.hocmoingay.core.db.CodeDraftDao
 import com.thanhnb.hocmoingay.core.db.CodeDraftEntity
 import com.thanhnb.hocmoingay.core.db.LessonEntity
@@ -33,6 +36,7 @@ class EditorViewModelTest {
     private val progress = mutableMapOf<String, ProgressEntity>()
     private val draftMap = mutableMapOf<Triple<String, String, String>, String>()
     private val calls = mutableListOf<String>()
+    private var gate: CompletableDeferred<Unit>? = null
     private var submitResult = """{"compiled":true,"tests":[{"name":"a","pass":true,"time_ms":1,"hidden":false}],"time_ms":1}"""
 
     private val drafts = object : CodeDraftDao {
@@ -45,7 +49,7 @@ class EditorViewModelTest {
         when (mode) {
             "starter" -> """{"code":"fn two_sum() {}"}"""
             "hint" -> """{"lines":["b","a"]}"""
-            else -> submitResult
+            else -> { gate?.await(); submitResult }
         }
     }
 
@@ -61,6 +65,15 @@ class EditorViewModelTest {
 
     @Before fun setUp() = Dispatchers.setMain(d)
     @After fun tearDown() = Dispatchers.resetMain()
+
+    @Test fun roiManKhiDangNopVanGhiKetQua() = runTest(d) {
+        val v = vm(); advanceUntilIdle()
+        gate = CompletableDeferred()
+        v.submit(); advanceUntilIdle() // đang chờ server chấm
+        v.viewModelScope.cancel() // người dùng bấm back
+        gate!!.complete(Unit); advanceUntilIdle()
+        assertEquals("true", (cardStateOf(progress[id])["two_sum"] as? JsonObject)?.get("pass")?.toString())
+    }
 
     private fun state() = cardStateOf(progress[id])["two_sum"] as JsonObject
 

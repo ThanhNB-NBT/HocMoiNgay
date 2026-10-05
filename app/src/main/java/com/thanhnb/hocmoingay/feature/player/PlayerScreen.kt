@@ -1,5 +1,6 @@
 package com.thanhnb.hocmoingay.feature.player
 
+import com.thanhnb.hocmoingay.core.lesson.codePending
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -77,7 +78,7 @@ fun PlayerScreen(vm: PlayerViewModel, lessonId: String, onBack: () -> Unit, onOp
             TopBar(q.progress, onBack)
             when {
                 !started -> Intro(body, lessonId, vm::start)
-                q.finished -> Done(q.score, onBack)
+                q.finished -> Done(q.score, body.codePending(states), onBack)
                 else -> {
                     // số trang tăng khi card sai được thêm vào cuối: lambda phải đọc giá trị mới, không phải q lúc dựng đầu
                     val pages by rememberUpdatedState(q.order.size)
@@ -171,7 +172,7 @@ private fun BottomBar(q: PlayerQueue, onNext: () -> Unit) {
 
 /** Khoảnh khắc mạnh của màn: khối coral có điểm đếm tăng dần. */
 @Composable
-private fun Done(score: Int, onBack: () -> Unit) {
+private fun Done(score: Int, codePending: Boolean, onBack: () -> Unit) {
     val f = LocalFun.current
     Column(Modifier.fillMaxSize().padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(20.dp)) {
         Spacer(Modifier.weight(1f))
@@ -186,7 +187,7 @@ private fun Done(score: Int, onBack: () -> Unit) {
                 Text("trả lời đúng ngay lần đầu", style = MaterialTheme.typography.bodyLarge, color = f.onCoralContainer)
             }
         }
-        Text("Các thẻ đánh dấu ôn tập đã vào lịch ôn.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(if (codePending) "Bài code còn để sau — nộp đạt thì bài mới tính là xong." else "Các thẻ đánh dấu ôn tập đã vào lịch ôn.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.weight(1f))
         PushButton("Về đề cương", onBack, Modifier.fillMaxWidth())
     }

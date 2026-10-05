@@ -141,7 +141,7 @@ class EditorViewModel(
         if (s.busy != null) return
         flush()
         _ui.update { it.copy(busy = kind, result = null) }
-        viewModelScope.launch {
+        flushScope.launch { // rời màn khi đang chờ chấm vẫn ghi pass/fails
             val out = block(lang, code)
             _ui.update { it.copy(busy = null, result = out) }
         }

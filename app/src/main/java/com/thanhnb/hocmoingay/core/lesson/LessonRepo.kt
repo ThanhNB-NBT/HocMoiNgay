@@ -1,5 +1,7 @@
 package com.thanhnb.hocmoingay.core.lesson
 
+import kotlinx.serialization.json.booleanOrNull
+import kotlinx.serialization.json.JsonPrimitive
 import com.thanhnb.hocmoingay.core.db.LessonEntity
 import com.thanhnb.hocmoingay.core.db.ProgressEntity
 import com.thanhnb.hocmoingay.core.db.ReviewCardEntity
@@ -9,6 +11,10 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonObject
+
+/** Bài luyện code mà card code bấm "Để sau": chưa nộp đạt thì bài chưa tính là xong. */
+fun LessonBody.codePending(state: JsonObject): Boolean = kind == "problem" &&
+    cards.any { it is CodeTask && ((state[it.key] as? JsonObject)?.get("pass") as? JsonPrimitive)?.booleanOrNull != true }
 
 fun cardStateOf(row: ProgressEntity?): JsonObject =
     row?.cardState?.let { runCatching { LessonJson.parseToJsonElement(it) as? JsonObject }.getOrNull() } ?: JsonObject(emptyMap())
@@ -75,7 +81,11 @@ class LessonRepo(
         val l = load(lessonId) ?: return
         val trackName = track(l.entity.courseId) ?: "code"
         val t = now()
-        edit(lessonId) { p -> p.copy(status = "done", score = maxOf(p.score ?: 0, score), completedAt = p.completedAt ?: t) }
+        edit(lessonId) { p ->
+            val best = maxOf(p.score ?: 0, score)
+            if (l.body.codePending(cardStateOf(p))) p.copy(score = best)
+            else p.copy(status = "done", score = best, completedAt = p.completedAt ?: t)
+        }
         val refs = l.body.cards.filter { it.review }.map { "$lessonId#${it.key}" } + l.body.review.map { "$lessonId#${it.key}" }
         tx {
             val ids = refs.associateBy { ReviewCardIds.of(uid, it) }
