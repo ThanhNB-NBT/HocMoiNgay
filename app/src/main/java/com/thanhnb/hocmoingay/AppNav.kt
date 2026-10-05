@@ -1,17 +1,12 @@
 package com.thanhnb.hocmoingay
 
-import com.thanhnb.hocmoingay.core.ui.Pushable
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.animation.core.spring
+import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
@@ -22,33 +17,45 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material3.Button
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.addPathNodes
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
+import com.thanhnb.hocmoingay.core.code.LocalAssets
+import com.thanhnb.hocmoingay.core.ui.LocalShared
+import com.thanhnb.hocmoingay.core.ui.Pushable
 import com.thanhnb.hocmoingay.feature.Placeholder
+import com.thanhnb.hocmoingay.feature.course.CourseScreen
+import com.thanhnb.hocmoingay.feature.course.CourseViewModel
 import com.thanhnb.hocmoingay.feature.learn.LearnScreen
 import com.thanhnb.hocmoingay.feature.learn.LearnViewModel
 import com.thanhnb.hocmoingay.feature.profile.ProfileScreen
@@ -126,32 +133,40 @@ fun AppNav(graph: AppGraph) {
             if (top in TABS) TabBar(top) { backStack.selectTab(it) }
         },
     ) { pad ->
-        NavDisplay(
-            backStack = backStack,
-            onBack = { backStack.removeLastOrNull() },
-            modifier = Modifier.padding(pad).consumeWindowInsets(pad),
-            entryProvider = entryProvider {
-                entry<Today> { TodayScreen(graph.settings.settings, onOpenLearn = { backStack.selectTab(Learn) }) }
-                entry<Learn> {
-                    LearnScreen(viewModel { LearnViewModel(graph.db.curriculum()) }, onOpenCourse = { backStack.add(CourseDetail(it)) })
-                }
-                entry<Review> {
-                    Placeholder("Chưa có thẻ cần ôn", "Học xong bài nào, thẻ ôn của bài đó sẽ được xếp lịch và hiện ở đây.", icon = CardsIcon)
-                }
-                entry<Profile> {
-                    ProfileScreen(graph.supabase.auth.currentUserOrNull()?.email, onOpenSettings = { backStack.add(Settings) })
-                }
-                entry<Settings> {
-                    SettingsScreen(viewModel { SettingsViewModel(graph.settings) }, onBack = { backStack.removeLastOrNull() })
-                }
-                entry<CourseDetail> { k ->
-                    Placeholder("Khoá ${k.courseId}", "Đề cương — giai đoạn c", icon = BookIcon) {
-                        Button(onClick = { backStack.add(LessonPlayer("${k.courseId}/nhap-mon/lam-quen/xin-chao")) }) { Text("Mở thử trình phát bài") }
-                    }
-                }
-                entry<LessonPlayer> { k -> Placeholder("Trình phát bài", k.lessonId) }
-                entry<CodeEditor> { k -> Placeholder("Editor", "${k.lessonId}#${k.cardKey}") }
-            },
-        )
+        SharedTransitionLayout {
+            CompositionLocalProvider(LocalShared provides this, LocalAssets provides graph.assets) {
+                NavDisplay(
+                    backStack = backStack,
+                    onBack = { backStack.removeLastOrNull() },
+                    modifier = Modifier.padding(pad).consumeWindowInsets(pad),
+                    // mỗi entry một ViewModelStore: mở bài B không dùng lại ViewModel của bài A
+                    entryDecorators = listOf(rememberSaveableStateHolderNavEntryDecorator(), rememberViewModelStoreNavEntryDecorator()),
+                    entryProvider = entryProvider {
+                        entry<Today> { TodayScreen(graph.settings.settings, onOpenLearn = { backStack.selectTab(Learn) }) }
+                        entry<Learn> {
+                            LearnScreen(viewModel { LearnViewModel(graph.db.curriculum(), graph.db.learner().observeAllProgress()) }, onOpenCourse = { backStack.add(CourseDetail(it)) })
+                        }
+                        entry<Review> {
+                            Placeholder("Chưa có thẻ cần ôn", "Học xong bài nào, thẻ ôn của bài đó sẽ được xếp lịch và hiện ở đây.", icon = CardsIcon)
+                        }
+                        entry<Profile> {
+                            ProfileScreen(graph.supabase.auth.currentUserOrNull()?.email, onOpenSettings = { backStack.add(Settings) })
+                        }
+                        entry<Settings> {
+                            SettingsScreen(viewModel { SettingsViewModel(graph.settings) }, onBack = { backStack.removeLastOrNull() })
+                        }
+                        entry<CourseDetail> { k ->
+                            CourseScreen(
+                                viewModel { CourseViewModel(k.courseId, graph.db.curriculum(), graph.db.learner().observeAllProgress()) },
+                                onBack = { backStack.removeLastOrNull() },
+                                onOpenLesson = { backStack.add(LessonPlayer(it)) },
+                            )
+                        }
+                        entry<LessonPlayer> { k -> Placeholder("Trình phát bài", k.lessonId) }
+                        entry<CodeEditor> { k -> Placeholder("Editor", "${k.lessonId}#${k.cardKey}") }
+                    },
+                )
+            }
+        }
     }
 }
