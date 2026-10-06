@@ -1,5 +1,6 @@
 package com.thanhnb.hocmoingay
 
+import com.thanhnb.hocmoingay.feature.profile.ProfileViewModel
 import com.thanhnb.hocmoingay.feature.today.TodayViewModel
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.core.Animatable
@@ -181,7 +182,10 @@ fun AppNav(graph: AppGraph) {
                             )
                         }
                         entry<Profile> {
-                            ProfileScreen(graph.supabase.auth.currentUserOrNull()?.email, onOpenSettings = { backStack.add(Settings) })
+                            ProfileScreen(
+                                viewModel { ProfileViewModel(graph.db.curriculum(), graph.db.learner(), graph.log::dayOf, BuildConfig.SHOW_SAMPLES) },
+                                graph.supabase.auth.currentUserOrNull()?.email, onOpenSettings = { backStack.add(Settings) },
+                            )
                         }
                         entry<Settings> {
                             SettingsScreen(viewModel { SettingsViewModel(graph.settings) }, onBack = { backStack.removeLastOrNull() }, onPlacement = { backStack.add(Placement) })

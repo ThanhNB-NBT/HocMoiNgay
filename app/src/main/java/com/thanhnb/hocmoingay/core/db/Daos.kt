@@ -48,6 +48,8 @@ abstract class LearnerDao {
     @Query("SELECT * FROM daily_log WHERE dirty = 1") abstract suspend fun dirtyDailyLog(): List<DailyLogEntity>
     @Query("SELECT * FROM daily_log WHERE deleted = 0 AND day >= :from ORDER BY day")
     abstract fun observeDailyLog(from: String): Flow<List<DailyLogEntity>>
+    @Query("SELECT COALESCE(SUM(xp), 0) FROM daily_log WHERE deleted = 0")
+    abstract fun observeTotalXp(): Flow<Int>
     @Query("SELECT * FROM daily_log WHERE day IN (:keys)") abstract suspend fun dailyLogByKeys(keys: List<String>): List<DailyLogEntity>
     @Upsert abstract suspend fun upsertDailyLog(rows: List<DailyLogEntity>)
     @Query("UPDATE daily_log SET dirty = 0 WHERE day = :key AND updatedAt = :updatedAt") abstract suspend fun cleanDailyLog(key: String, updatedAt: Long)
