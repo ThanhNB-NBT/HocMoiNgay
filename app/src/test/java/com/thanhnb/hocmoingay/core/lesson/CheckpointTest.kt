@@ -20,6 +20,7 @@ class CheckpointTest {
         )
         val b = buildCheckpoint("Vòng lặp", ls, seed = 1)!!
         assertEquals("checkpoint", b.kind)
+        assertTrue(b.canDo.contains("Vòng lặp")) // đầu bài "Học xong bài này, bạn sẽ …" không bỏ trống
         assertEquals(11, b.cards.size)
         assertEquals("b.c2", b.cards.last().key)
         assertTrue(b.cards.dropLast(1).all { it is Quiz && it.review })

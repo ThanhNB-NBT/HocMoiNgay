@@ -50,6 +50,7 @@ fun buildCheckpoint(title: String, lessons: List<Pair<String, String>>, seed: In
     val body = buildJsonObject {
         put("title", "Kiểm tra cuối chương: $title")
         put("kind", "checkpoint")
+        put("can_do", "nhớ lại được phần chính của chương “$title” — đạt từ 80% là chương thành thạo")
         put("estimate_min", 3 + cards.size)
         put("cards", JsonArray(cards))
     }

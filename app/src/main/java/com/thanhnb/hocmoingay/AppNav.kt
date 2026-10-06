@@ -1,5 +1,6 @@
 package com.thanhnb.hocmoingay
 
+import com.thanhnb.hocmoingay.feature.today.TodayViewModel
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.spring
@@ -149,7 +150,21 @@ fun AppNav(graph: AppGraph) {
                     // mỗi entry một ViewModelStore: mở bài B không dùng lại ViewModel của bài A
                     entryDecorators = listOf(rememberSaveableStateHolderNavEntryDecorator(), rememberViewModelStoreNavEntryDecorator()),
                     entryProvider = entryProvider {
-                        entry<Today> { TodayScreen(graph.settings.settings, onOpenLearn = { backStack.selectTab(Learn) }) }
+                        entry<Today> {
+                            TodayScreen(
+                                viewModel {
+                                    TodayViewModel(
+                                        graph.db.curriculum(), graph.db.learner(), graph.settings.settings,
+                                        { graph.lessons.load(it)?.body }, graph.log::dayOf, BuildConfig.SHOW_SAMPLES,
+                                    )
+                                },
+                                onOpenLearn = { backStack.selectTab(Learn) },
+                                onOpenReview = { backStack.selectTab(Review) },
+                                onOpenLesson = { backStack.add(LessonPlayer(it)) },
+                                onResolve = { l, k -> backStack.add(CodeEditor(l, k, review = true)) },
+                                onPlacement = { backStack.add(Placement) },
+                            )
+                        }
                         entry<Learn> {
                             val s by graph.settings.settings.collectAsStateWithLifecycle(AppSettings())
                             LearnScreen(
