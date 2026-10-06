@@ -41,7 +41,10 @@ sealed interface Card {
 }
 
 // ===== Dùng chung
-@Serializable @SerialName("explain") data class Explain(override val key: String, override val review: Boolean = false, val md: String) : Card
+@Serializable @SerialName("explain") data class Explain(override val key: String, override val review: Boolean = false, val md: String, val say: List<Say> = emptyList()) : Card
+
+/** Câu ví dụ tiếng Anh trong card explain: bấm để nghe và hiện nghĩa. */
+@Serializable data class Say(val en: String, val vi: String = "")
 @Serializable @SerialName("quiz") data class Quiz(
     override val key: String, override val review: Boolean = false,
     val q: String, val choices: List<String>, val answer: List<Int>, val why: List<String> = emptyList(),

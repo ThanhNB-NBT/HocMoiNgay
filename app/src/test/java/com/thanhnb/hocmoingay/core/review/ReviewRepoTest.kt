@@ -3,6 +3,7 @@ package com.thanhnb.hocmoingay.core.review
 import com.thanhnb.hocmoingay.core.db.DailyLogEntity
 import com.thanhnb.hocmoingay.core.db.ReviewCardEntity
 import com.thanhnb.hocmoingay.core.log.DailyLogRepo
+import com.thanhnb.hocmoingay.core.sync.ReviewCardIds
 import java.time.Instant
 import java.time.ZoneId
 import kotlinx.coroutines.test.runTest
@@ -27,6 +28,21 @@ class ReviewRepoTest {
     private fun card(id: String, due: Long) = ReviewCardEntity(
         id = id, userId = "u1", ref = "l#$id", kind = "recall", track = "english", courseId = "c", due = due, updatedAt = 5,
     )
+
+    @Test fun hocTuMoiTaoTheRoiChamLanHaiChiChamTiep() = runTest {
+        repo.learn("u1", "en/A1/x/y#v_name", "en", Rating.GOOD)
+        val id = ReviewCardIds.of("u1", "en/A1/x/y#v_name")
+        val a = cards.getValue(id)
+        assertEquals("recall", a.kind)
+        assertEquals(1, a.reps)
+        assertEquals(clock + 2 * DAY_MS, a.due)
+        assertEquals(1, logs.getValue("2026-10-05").newCards)
+        repo.learn("u1", "en/A1/x/y#v_name", "en", Rating.GOOD)
+        assertEquals(1, cards.size)
+        assertEquals(2, cards.getValue(id).reps)
+        assertEquals(1, logs.getValue("2026-10-05").newCards) // lần 2 không tính là thẻ mới
+        assertEquals(2, logs.getValue("2026-10-05").reviews)
+    }
 
     @Test fun nhoTheMoiThiSangReviewHaiNgay() = runTest {
         cards["a"] = card("a", clock)

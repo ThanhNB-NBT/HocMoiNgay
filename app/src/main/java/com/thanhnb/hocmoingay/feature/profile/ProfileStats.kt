@@ -26,15 +26,34 @@ fun heatLevel(xp: Int): Int = when {
     else -> 4
 }
 
+/** Số tuần trên lịch học: vừa một màn điện thoại, không phải vuốt. */
+const val HEAT_WEEKS = 12
+
+private fun heatStart(today: LocalDate, weeks: Int) = today.minusDays((today.dayOfWeek.value - 1).toLong()).minusWeeks((weeks - 1).toLong())
+
 /** [weeks] cột × 7 hàng (Thứ Hai trên cùng), cột cuối là tuần chứa [today]; ô sau hôm nay là null (không vẽ). */
-fun heatmap(xpByDay: Map<LocalDate, Int>, today: LocalDate, weeks: Int = 26): List<List<Int?>> {
-    val start = today.minusDays((today.dayOfWeek.value - 1).toLong()).minusWeeks((weeks - 1).toLong())
+fun heatmap(xpByDay: Map<LocalDate, Int>, today: LocalDate, weeks: Int = HEAT_WEEKS): List<List<Int?>> {
+    val start = heatStart(today, weeks)
     return List(weeks) { w ->
         List(7) { d ->
             val day = start.plusDays((w * 7 + d).toLong())
             if (day.isAfter(today)) null else heatLevel(xpByDay[day] ?: 0)
         }
     }
+}
+
+/**
+ * Nhãn tháng trên đầu cột như GitHub: cột có ngày mùng 1 ghi "Th<tháng>"; cột đầu ghi tháng của nó nếu 2 cột đầu chưa có nhãn.
+ * Còn lại null.
+ */
+fun heatMonths(today: LocalDate, weeks: Int = HEAT_WEEKS): List<String?> {
+    val start = heatStart(today, weeks)
+    val labels = MutableList<String?>(weeks) { w ->
+        val mon = start.plusWeeks(w.toLong())
+        (0L..6L).map { mon.plusDays(it) }.firstOrNull { it.dayOfMonth == 1 }?.let { "Th${it.monthValue}" }
+    }
+    if (labels.take(2).all { it == null }) labels[0] = "Th${start.monthValue}"
+    return labels
 }
 
 /** Phút theo 4 mạch trong 7 ngày gần nhất (tính cả hôm nay). */

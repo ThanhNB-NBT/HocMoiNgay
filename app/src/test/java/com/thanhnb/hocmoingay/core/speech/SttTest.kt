@@ -21,4 +21,11 @@ class SttTest {
         assertTrue("tiếng Anh" in sttError(SpeechRecognizer.ERROR_LANGUAGE_UNAVAILABLE)!!)
         assertTrue("tiếng Anh" in sttError(SpeechRecognizer.ERROR_LANGUAGE_NOT_SUPPORTED)!!)
     }
+
+    @Test fun loiLaThiThuBoKhac() {
+        assertTrue(sttRetryable(11)) // SERVER_DISCONNECTED trên máy Xiaomi
+        assertTrue(sttRetryable(SpeechRecognizer.ERROR_LANGUAGE_UNAVAILABLE))
+        assertTrue(!sttRetryable(SpeechRecognizer.ERROR_NO_MATCH))
+        assertTrue(!sttRetryable(SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS))
+    }
 }

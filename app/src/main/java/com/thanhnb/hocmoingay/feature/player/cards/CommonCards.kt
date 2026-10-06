@@ -85,7 +85,13 @@ fun CardView(card: Card, ctx: CardCtx) = when (card) {
 fun Ungraded(ctx: CardCtx) = LaunchedEffect(ctx.active, ctx.answered) { if (ctx.active && !ctx.answered) ctx.onAnswer(true, false) }
 
 @Composable
-private fun ExplainCard(c: Explain, ctx: CardCtx) { Ungraded(ctx); Markdown(c.md) }
+private fun ExplainCard(c: Explain, ctx: CardCtx) {
+    Ungraded(ctx)
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Markdown(c.md)
+        c.say.forEach { SayRow(it) }
+    }
+}
 
 /** Card tiếng Anh (giai đoạn d) và free_text writing: nói thật là chưa có, cho đi tiếp. */
 @Composable

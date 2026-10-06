@@ -48,6 +48,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
+import com.thanhnb.hocmoingay.core.auth.ChangePasswordDialog
 import com.thanhnb.hocmoingay.core.theme.ThemeMode
 import com.thanhnb.hocmoingay.core.theme.ThemeStyle
 import com.thanhnb.hocmoingay.core.ui.PushButton
@@ -76,10 +77,15 @@ class SettingsViewModel(private val repo: SettingsRepo) : ViewModel() {
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
-fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit, onPlacement: () -> Unit) {
+fun SettingsScreen(
+    vm: SettingsViewModel, onBack: () -> Unit, onPlacement: () -> Unit,
+    email: String?, changePassword: suspend (old: String, new: String) -> Unit,
+) {
     val s by vm.settings.collectAsStateWithLifecycle()
     val loaded by vm.loaded.collectAsStateWithLifecycle()
     var addingTime by rememberSaveable { mutableStateOf(false) }
+    var changingPw by rememberSaveable { mutableStateOf(false) }
+    var pwDone by rememberSaveable { mutableStateOf<String?>(null) }
 
     Scaffold(
         topBar = {
@@ -146,11 +152,17 @@ fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit, onPlacement: () ->
                 Hint(s.englishLevel?.let { "Trình độ hiện tại: $it." } ?: "Bạn chưa làm bài xếp lớp.")
                 PushButton(if (s.englishLevel == null) "Làm bài xếp lớp" else "Làm lại bài xếp lớp", onPlacement, Modifier.fillMaxWidth())
             }
+            Section("Tài khoản") {
+                Hint(email ?: "Chưa đăng nhập")
+                PushButton("Đổi mật khẩu", { pwDone = null; changingPw = true }, Modifier.fillMaxWidth())
+                pwDone?.let { Hint(it) }
+            }
             Section("Phiên bản") { UpdateCheck() }
             Spacer(Modifier.height(24.dp))
         }
     }
 
+    if (changingPw) ChangePasswordDialog(changePassword) { pwDone = it; changingPw = false }
     if (addingTime) TimeDialog(onDismiss = { addingTime = false }, onPick = { vm.addTime(it); addingTime = false })
 }
 

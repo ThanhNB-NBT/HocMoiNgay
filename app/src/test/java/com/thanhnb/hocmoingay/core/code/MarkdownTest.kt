@@ -24,4 +24,15 @@ class MarkdownTest {
         assertEquals("Gán tong trước vòng lặp", s.text)
         assertEquals(listOf(4 to 8, 9 to 14), s.spanStyles.map { it.start to it.end })
     }
+
+    @Test fun bangBoHangKe() = assertEquals(
+        listOf(Md.Para("Bảng:"), Md.Table(listOf(listOf("I", "am"), listOf("he", "is"))), Md.Para("Hết")),
+        parseMd("Bảng:\n\n| I | am |\n|---|---|\n| he | is |\nHết"),
+    )
+
+    @Test fun nghiengVaGachNgang() {
+        val s = inlineMd("~~He go.~~ → *He goes.*", code = SpanStyle(), bold = SpanStyle())
+        assertEquals("He go. → He goes.", s.text)
+        assertEquals(listOf(0 to 6, 9 to 17), s.spanStyles.map { it.start to it.end })
+    }
 }

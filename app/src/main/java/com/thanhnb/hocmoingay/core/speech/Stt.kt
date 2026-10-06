@@ -1,5 +1,6 @@
 package com.thanhnb.hocmoingay.core.speech
 
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
@@ -7,6 +8,7 @@ import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import android.speech.RecognitionListener
+import android.speech.RecognitionService
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import androidx.compose.runtime.Composable
@@ -26,10 +28,18 @@ fun sttError(code: Int): String? = when (code) {
     SpeechRecognizer.ERROR_AUDIO -> "Không thu được tiếng từ micro."
     SpeechRecognizer.ERROR_LANGUAGE_UNAVAILABLE, SpeechRecognizer.ERROR_LANGUAGE_NOT_SUPPORTED ->
         "Máy chưa có gói nhận dạng tiếng Anh. Kết nối mạng rồi thử lại, hoặc tải gói tiếng Anh trong cài đặt giọng nói của máy."
-    else -> "Không nhận dạng được giọng nói (mã $code)."
+    else -> "Không nhận dạng được giọng nói (mã $code). Cài app Google hoặc \"Dịch vụ lời nói của Google\" từ CH Play rồi thử lại."
 }
 
-/** SpeechRecognizer `en-US`, ưu tiên offline (spec §7.2). Mọi hàm gọi trên main thread. */
+/** Lỗi nên thử bộ nhận dạng khác thay vì báo ngay: không nghe thấy và thiếu quyền thì đổi bộ cũng vô ích. */
+fun sttRetryable(code: Int) = code != SpeechRecognizer.ERROR_NO_MATCH && code != SpeechRecognizer.ERROR_SPEECH_TIMEOUT &&
+    code != SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS
+
+/**
+ * SpeechRecognizer `en-US`. Mọi hàm gọi trên main thread.
+ * Máy Xiaomi/Oppo… hay đặt bộ nhận dạng mặc định của hãng: không có tiếng Anh, hoặc ép offline thì báo lỗi lạ
+ * (mã 11 SERVER_DISCONNECTED, 13 LANGUAGE_UNAVAILABLE). Nên thử lần lượt: mặc định offline → mặc định online → từng bộ khác cài trên máy (Google).
+ */
 class Stt(private val ctx: Context) {
     class Listening(val stop: () -> Unit, val cancel: () -> Unit)
 
@@ -37,11 +47,19 @@ class Stt(private val ctx: Context) {
 
     fun available(): Boolean = SpeechRecognizer.isRecognitionAvailable(ctx)
 
-    /**
-     * Nghe một lượt tới khi người học ngừng nói. [Listening.stop] giao phần đã nghe; [Listening.cancel] bỏ, không gọi [onDone].
-     * Ưu tiên offline; máy chưa tải gói tiếng Anh offline thì báo ERROR_LANGUAGE_UNAVAILABLE, khi đó nghe lại một lần không ép offline.
-     */
+    /** Bộ nhận dạng cài trên máy, bộ Google lên trước. Cần `<queries>` RecognitionService trong manifest. */
+    private fun services(): List<ComponentName> =
+        ctx.packageManager.queryIntentServices(Intent(RecognitionService.SERVICE_INTERFACE), 0)
+            .map { ComponentName(it.serviceInfo.packageName, it.serviceInfo.name) }
+            .sortedByDescending { it.packageName.startsWith("com.google.") }
+
+    /** Bộ nhận dạng lỗi thì lần sau bắt đầu luôn từ bộ chạy được, khỏi chờ thử lại mỗi lượt nói. */
+    private var good: Pair<ComponentName?, Boolean>? = null
+
+    /** Nghe một lượt tới khi người học ngừng nói. [Listening.stop] giao phần đã nghe; [Listening.cancel] bỏ, không gọi [onDone]. */
     fun listen(onPartial: (String) -> Unit, onDone: (Result<String>) -> Unit): Listening {
+        // (component, offline); null = bộ mặc định của máy
+        val plan = (listOfNotNull(good) + listOf<Pair<ComponentName?, Boolean>>(null to true, null to false) + services().map { it to false }).distinct()
         var r: SpeechRecognizer? = null
         var finished = false
         fun close(x: SpeechRecognizer) = main.post { x.destroy() } // không destroy ngay trong callback của chính nó
@@ -51,18 +69,23 @@ class Stt(private val ctx: Context) {
             r?.let(::close)
             onDone(res)
         }
-        fun start(offline: Boolean) {
-            val x = SpeechRecognizer.createSpeechRecognizer(ctx)
+        fun start(i: Int) {
+            val (comp, offline) = plan[i]
+            val x = runCatching { if (comp == null) SpeechRecognizer.createSpeechRecognizer(ctx) else SpeechRecognizer.createSpeechRecognizer(ctx, comp) }
+                .getOrElse { if (i + 1 < plan.size) return start(i + 1) else return finish(Result.failure(Exception(sttError(SpeechRecognizer.ERROR_CLIENT)))) }
             r = x
             x.setRecognitionListener(object : RecognitionListener {
-                override fun onResults(b: Bundle?) = finish(Result.success(b.best()))
+                override fun onResults(b: Bundle?) { good = plan[i]; finish(Result.success(b.best())) }
                 override fun onPartialResults(b: Bundle?) = onPartial(b.best())
                 override fun onError(error: Int) {
-                    if (offline && error == SpeechRecognizer.ERROR_LANGUAGE_UNAVAILABLE && !finished) {
+                    if (finished) return
+                    if (sttRetryable(error) && i + 1 < plan.size) {
+                        if (good == plan[i]) good = null
                         close(x)
-                        main.post { if (!finished) start(offline = false) }
+                        main.postDelayed({ if (!finished) start(i + 1) }, 200) // thả micro cho bộ trước rồi mới mở bộ sau
                         return
                     }
+                    if (!sttRetryable(error)) good = plan[i]
                     finish(sttError(error)?.let { Result.failure(Exception(it)) } ?: Result.success(""))
                 }
                 override fun onReadyForSpeech(params: Bundle?) {}
@@ -80,7 +103,7 @@ class Stt(private val ctx: Context) {
                     .putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true),
             )
         }
-        start(offline = true)
+        start(0)
         return Listening(
             stop = { if (!finished) r?.stopListening() },
             cancel = { if (!finished) { finished = true; r?.let { it.cancel(); close(it) } } },

@@ -32,6 +32,7 @@ import com.thanhnb.hocmoingay.core.lesson.Dialogue
 import com.thanhnb.hocmoingay.core.lesson.Listen
 import com.thanhnb.hocmoingay.core.lesson.MinimalPair
 import com.thanhnb.hocmoingay.core.lesson.Read
+import com.thanhnb.hocmoingay.core.lesson.Say
 import com.thanhnb.hocmoingay.core.lesson.Vocab
 import com.thanhnb.hocmoingay.core.speech.LocalTts
 import com.thanhnb.hocmoingay.core.speech.Tts
@@ -61,7 +62,7 @@ fun VocabCard(c: Vocab, ctx: CardCtx) {
         SpeakerBar(c.word, autoPlay = ctx.active)
         Text(c.meaningVi, style = MaterialTheme.typography.titleLarge)
         c.examples.forEach { e ->
-            Pushable({ tts?.speak(e, 1f, owner) }, MaterialTheme.colorScheme.surfaceContainerHigh, RoundedCornerShape(16.dp), Modifier.fillMaxWidth()) {
+            Pushable({ tts?.speak(e, owner) }, MaterialTheme.colorScheme.surfaceContainerHigh, RoundedCornerShape(16.dp), Modifier.fillMaxWidth()) {
                 Text(e, Modifier.padding(14.dp), style = MaterialTheme.typography.bodyLarge)
             }
         }
@@ -179,7 +180,7 @@ fun DialogueCard(c: Dialogue, ctx: CardCtx) {
     LaunchedEffect(until, ctx.active) {
         if (!ctx.active) return@LaunchedEffect
         val line = (until downTo 0).firstNotNullOfOrNull { turns.getOrNull(it) as? Turn.Line }
-        if (line != null) tts?.speak(line.text, 1f, owner)
+        if (line != null) tts?.speak(line.text, owner)
     }
     LaunchedEffect(solved) { if (picks.isNotEmpty() && solved == picks.size && !ctx.answered) ctx.onAnswer(mistakes == 0, true) }
     DisposableEffect(Unit) { onDispose { tts?.stop(owner) } }
@@ -189,11 +190,25 @@ fun DialogueCard(c: Dialogue, ctx: CardCtx) {
         turns.forEachIndexed { i, turn ->
             if (i > until) return@forEachIndexed
             when (turn) {
-                is Turn.Line -> LineBubble(turn) { tts?.speak(turn.text, 1f, owner) }
+                is Turn.Line -> LineBubble(turn) { tts?.speak(turn.text, owner) }
                 is Turn.Pick ->
                     if (picks.indexOf(i) < solved) MyBubble(turn.options.first { it.ok }.text)
                     else PickBlock(turn, "${ctx.seed}#$i", onWrong = { mistakes++ }, onRight = { solved++ })
             }
+        }
+    }
+}
+
+/** Câu ví dụ: bấm để nghe, bấm lần nữa ẩn/hiện nghĩa. */
+@Composable
+fun SayRow(s: Say) {
+    val tts = LocalTts.current
+    val owner = remember { Any() }
+    var vi by rememberSaveable(s.en) { mutableStateOf(false) }
+    Pushable({ tts?.speak(s.en, owner); vi = !vi }, MaterialTheme.colorScheme.surfaceContainerHigh, RoundedCornerShape(16.dp), Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(14.dp)) {
+            Text(s.en, style = MaterialTheme.typography.bodyLarge)
+            if (vi && s.vi.isNotBlank()) Text(s.vi, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }

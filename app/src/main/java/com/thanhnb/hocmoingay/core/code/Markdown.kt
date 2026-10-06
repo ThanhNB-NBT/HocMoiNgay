@@ -38,7 +38,9 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.thanhnb.hocmoingay.core.net.Assets
@@ -52,11 +54,14 @@ sealed interface Md {
     data class Bullet(val text: String, val number: Int?) : Md
     data class Code(val lang: String, val code: String) : Md
     data class Image(val alt: String, val path: String) : Md
+    /** Bảng `| a | b |`: hàng đầu là tiêu đề, hàng `|---|` bị bỏ. */
+    data class Table(val rows: List<List<String>>) : Md
 }
 
 private val IMG = Regex("!\\[([^\\]]*)]\\(([^)]+)\\)")
 private val NUM_ITEM = Regex("(\\d+)\\. (.*)")
-private val INLINE = Regex("`([^`]+)`|\\*\\*([^*]+)\\*\\*")
+private val INLINE = Regex("`([^`]+)`|\\*\\*([^*]+)\\*\\*|~~([^~]+)~~|\\*([^*\\s][^*]*)\\*")
+private val TABLE_RULE = Regex("\\|[\\s:|-]+")
 
 /** Markdown tối giản, đủ cho giáo trình. Khối ```mermaid hiện như code, vì sơ đồ để sang f3. */
 fun parseMd(md: String): List<Md> {
@@ -78,6 +83,16 @@ fun parseMd(md: String): List<Md> {
                 out += Md.Code(t.removePrefix("```").trim(), buf.joinToString("\n"))
             }
             t.isEmpty() -> flush()
+            t.startsWith("|") -> {
+                flush()
+                val rows = mutableListOf<List<String>>()
+                while (i < lines.size && lines[i].trim().startsWith("|")) {
+                    val r = lines[i++].trim()
+                    if (!TABLE_RULE.matches(r)) rows += r.trim('|').split('|').map { it.trim() }
+                }
+                i--
+                out += Md.Table(rows)
+            }
             img != null -> { flush(); out += Md.Image(img.groupValues[1], img.groupValues[2]) }
             t.startsWith("#") -> { flush(); val lv = t.takeWhile { it == '#' }.length; out += Md.Heading(minOf(lv, 3), t.drop(lv).trim()) }
             t.startsWith("- ") || t.startsWith("* ") -> { flush(); out += Md.Bullet(t.drop(2), null) }
@@ -90,11 +105,20 @@ fun parseMd(md: String): List<Md> {
     return out
 }
 
-fun inlineMd(text: String, code: SpanStyle, bold: SpanStyle): AnnotatedString = buildAnnotatedString {
+fun inlineMd(
+    text: String, code: SpanStyle, bold: SpanStyle,
+    strike: SpanStyle = SpanStyle(textDecoration = TextDecoration.LineThrough), italic: SpanStyle = SpanStyle(fontStyle = FontStyle.Italic),
+): AnnotatedString = buildAnnotatedString {
     var last = 0
     for (m in INLINE.findAll(text)) {
         append(text.substring(last, m.range.first))
-        if (m.groups[1] != null) withStyle(code) { append(m.groupValues[1]) } else withStyle(bold) { append(m.groupValues[2]) }
+        val g = m.groups
+        when {
+            g[1] != null -> withStyle(code) { append(m.groupValues[1]) }
+            g[2] != null -> withStyle(bold) { append(m.groupValues[2]) }
+            g[3] != null -> withStyle(strike) { append(m.groupValues[3]) }
+            else -> withStyle(italic) { append(m.groupValues[4]) }
+        }
         last = m.range.last + 1
     }
     append(text.substring(last))
@@ -109,16 +133,35 @@ fun Markdown(md: String, modifier: Modifier = Modifier) {
     val ty = MaterialTheme.typography
     val code = SpanStyle(fontFamily = JetBrainsMono, color = cs.secondary, background = cs.surfaceContainerHigh)
     val bold = SpanStyle(fontWeight = FontWeight.Bold)
+    val strike = SpanStyle(textDecoration = TextDecoration.LineThrough, color = cs.error)
     Column(modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
         for (b in blocks) when (b) {
             is Md.Heading -> Text(inlineMd(b.text, code, bold), style = if (b.level == 1) ty.titleLarge else ty.titleMedium, fontWeight = FontWeight.Bold)
-            is Md.Para -> Text(inlineMd(b.text, code, bold), style = ty.bodyLarge)
+            is Md.Para -> Text(inlineMd(b.text, code, bold, strike), style = ty.bodyLarge)
             is Md.Bullet -> Row {
                 Text(b.number?.let { "$it." } ?: "•", Modifier.width(24.dp), style = ty.bodyLarge, color = cs.secondary, fontWeight = FontWeight.Bold)
-                Text(inlineMd(b.text, code, bold), style = ty.bodyLarge)
+                Text(inlineMd(b.text, code, bold, strike), style = ty.bodyLarge)
             }
             is Md.Code -> CodeBlock(b.code, b.lang)
             is Md.Image -> AssetImage(b.path, b.alt)
+            is Md.Table -> MdTable(b.rows) { inlineMd(it, code, bold, strike) }
+        }
+    }
+}
+
+@Composable
+private fun MdTable(rows: List<List<String>>, fmt: (String) -> AnnotatedString) {
+    val cs = MaterialTheme.colorScheme
+    val shape = RoundedCornerShape(12.dp)
+    val cols = rows.maxOf { it.size }
+    Column(Modifier.fillMaxWidth().clip(shape).border(1.dp, cs.outlineVariant, shape)) {
+        rows.forEachIndexed { r, row ->
+            Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min).background(if (r == 0) cs.surfaceContainerHigh else Color.Transparent)) {
+                for (c in 0 until cols) Text(
+                    fmt(row.getOrElse(c) { "" }), Modifier.weight(1f).padding(horizontal = 10.dp, vertical = 8.dp),
+                    style = MaterialTheme.typography.bodyMedium, fontWeight = if (r == 0) FontWeight.Bold else null,
+                )
+            }
         }
     }
 }

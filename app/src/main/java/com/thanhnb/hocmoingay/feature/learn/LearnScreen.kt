@@ -21,10 +21,18 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -52,6 +60,7 @@ import com.thanhnb.hocmoingay.core.ui.shapeFor
 import com.thanhnb.hocmoingay.core.ui.shared
 import com.thanhnb.hocmoingay.feature.Placeholder
 import com.thanhnb.hocmoingay.feature.ScreenHeader
+import com.thanhnb.hocmoingay.feature.today.ENGLISH_COURSE
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
@@ -89,45 +98,63 @@ fun courseGlyph(id: String, title: String) = when (id) {
     "thiet-ke-he-thong" -> "sys"
     "bao-mat" -> "#!"
     "english-work" -> "Aa"
+    "english-grammar" -> "Gr"
     else -> title.filter { it.isLetterOrDigit() }.take(2).lowercase()
 }
 
-/** Tab Học: danh sách khoá theo mảng, kèm tiến độ; ô ký hiệu + tiêu đề bay sang màn đề cương. */
+/** Tab Học: chọn mảng Lập trình / Tiếng Anh ở đầu màn, rồi danh sách khoá kèm tiến độ; ô ký hiệu + tiêu đề bay sang màn đề cương. */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LearnScreen(vm: LearnViewModel, englishLevel: String?, onOpenCourse: (String) -> Unit, onPlacement: () -> Unit) {
+fun LearnScreen(
+    vm: LearnViewModel, englishLevel: String?, onOpenCourse: (String) -> Unit, onPlacement: () -> Unit, onOpenVocab: (String) -> Unit,
+) {
     val list = vm.courses.collectAsStateWithLifecycle().value
+    var tab by rememberSaveable { mutableIntStateOf(0) }
     when {
         list == null -> Box(Modifier.fillMaxSize())
         list.isEmpty() -> Placeholder("Chưa có khoá học", "Giáo trình được tải về khi có mạng. Mở lại app sau khi kết nối.")
-        else -> LazyColumn(
-            Modifier.fillMaxSize().safeDrawingPadding(),
-            contentPadding = PaddingValues(bottom = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            item(key = "header") { ScreenHeader("Học", subtitle = "${list.size} khoá · chọn một khoá để xem lộ trình") }
-            groupCourses(list) { it.course.track }.forEach { (label, items) ->
-                val track = if (items.first().course.track == "code") Track.CODE else Track.ENGLISH
-                item(key = "h-$label") {
-                    ProvideTrack(track) {
-                        val t = LocalTrack.current
-                        Row(Modifier.padding(start = 20.dp, end = 20.dp, top = 18.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Box(Modifier.size(26.dp).background(t.accent, if (track == Track.CODE) Cookie else Flower))
-                            Spacer(Modifier.width(10.dp))
-                            Text(label, style = MaterialTheme.typography.headlineSmall, modifier = Modifier.weight(1f))
-                            Text(
-                                "${items.size} khoá", style = MaterialTheme.typography.labelLarge, color = t.onContainer,
-                                modifier = Modifier.background(t.container, CircleShape).padding(horizontal = 12.dp, vertical = 4.dp),
-                            )
+        else -> {
+            val groups = groupCourses(list) { it.course.track }
+            val (label, items) = groups[tab.coerceIn(0, groups.lastIndex)]
+            val track = if (items.first().course.track == "code") Track.CODE else Track.ENGLISH
+            LazyColumn(
+                Modifier.fillMaxSize().safeDrawingPadding(),
+                contentPadding = PaddingValues(bottom = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                item(key = "header") { ScreenHeader("Học", subtitle = "${list.size} khoá · chọn một khoá để xem lộ trình") }
+                if (groups.size > 1) item(key = "tabs") {
+                    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
+                        groups.forEachIndexed { i, (l, cs) ->
+                            SegmentedButton(
+                                selected = l == label, onClick = { tab = i },
+                                shape = SegmentedButtonDefaults.itemShape(i, groups.size),
+                            ) { Text("$l · ${cs.size}", maxLines = 1) }
                         }
                     }
                 }
-                if (track == Track.ENGLISH) item(key = "placement") {
-                    ProvideTrack(track) { PlacementCard(englishLevel, onPlacement) }
+                if (track == Track.ENGLISH) {
+                    item(key = "placement") { ProvideTrack(track) { PlacementCard(englishLevel, onPlacement) } }
+                    item(key = "vocab") { ProvideTrack(track) { VocabEntryCard { onOpenVocab(ENGLISH_COURSE) } } }
                 }
                 itemsIndexed(items, key = { _, it -> it.course.id }) { i, item ->
                     ProvideTrack(track) { CourseCard(item, Modifier.rise(i)) { onOpenCourse(item.course.id) } }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun VocabEntryCard(onClick: () -> Unit) {
+    val t = LocalTrack.current
+    Pushable(onClick, t.accent, RoundedCornerShape(24.dp), Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text("Sổ từ vựng", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = t.onAccent)
+                Text("Mọi từ theo cấp A1–C1 · nghe phát âm · học thẻ lật", style = MaterialTheme.typography.bodyMedium, color = t.onAccent)
+            }
+            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = t.onAccent)
         }
     }
 }

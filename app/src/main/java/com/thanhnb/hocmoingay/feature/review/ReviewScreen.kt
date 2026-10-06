@@ -230,11 +230,11 @@ private fun ClozeFace(c: ReviewItem.Cloze, onVerdict: (Boolean) -> Unit) {
     }
 }
 
-private data class Opt(val r: Rating, val label: String, val face: Color, val fg: Color)
+internal data class Opt(val r: Rating, val label: String, val face: Color, val fg: Color)
 
 /** 4 nút Again/Hard/Good/Easy, mỗi nút hiện trước khoảng cách tới lần ôn tiếp (spec §7.4). */
 @Composable
-private fun RatingRow(preview: Map<Rating, Long>, onRate: (Rating) -> Unit) {
+internal fun RatingRow(preview: Map<Rating, Long>, onRate: (Rating) -> Unit) {
     val f = LocalFun.current
     val cs = MaterialTheme.colorScheme
     val opts = listOf(

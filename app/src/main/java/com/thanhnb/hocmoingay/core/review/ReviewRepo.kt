@@ -3,6 +3,7 @@ package com.thanhnb.hocmoingay.core.review
 import com.thanhnb.hocmoingay.core.log.XP_REVIEW
 import com.thanhnb.hocmoingay.core.db.ReviewCardEntity
 import com.thanhnb.hocmoingay.core.log.DailyLogRepo
+import com.thanhnb.hocmoingay.core.sync.ReviewCardIds
 import com.thanhnb.hocmoingay.core.sync.nextUpdatedAt
 
 /** Bảng không có cột step: app không dùng bước học (Quyết định 2), nên thẻ chưa vào Review luôn ở bước 0. */
@@ -43,6 +44,26 @@ class ReviewRepo(
     fun preview(c: ReviewCardEntity): Map<Rating, Long> {
         val t = now()
         return fsrs.preview(c.memo(), t).mapValues { it.value.due - t }
+    }
+
+    /**
+     * Học một từ ở Sổ từ vựng: chưa có thẻ thì tạo thẻ `recall` rồi chấm như một lượt ôn, có rồi thì chấm tiếp.
+     * id là uuid5(user, ref) như thẻ bài học sinh ra, nên học trước rồi làm bài sau cũng không thành 2 thẻ.
+     */
+    suspend fun learn(uid: String, ref: String, courseId: String, r: Rating) {
+        val t = now()
+        val id = ReviewCardIds.of(uid, ref)
+        var fresh = false
+        tx {
+            val raw = byIds(listOf(id)).firstOrNull()
+            val old = raw?.takeUnless { it.deleted }
+            fresh = old == null
+            val base = old ?: ReviewCardEntity(id = id, userId = uid, ref = ref, kind = "recall", track = "english", courseId = courseId, due = t, updatedAt = 0)
+            // đọc updatedAt cả của hàng đã xoá để bản mới thắng LWW
+            put(base.reviewed(r, t, fsrs).copy(updatedAt = nextUpdatedAt(raw?.updatedAt, t), dirty = true, deleted = false))
+        }
+        afterWrite()
+        log.add(t) { it.copy(reviews = it.reviews + 1, newCards = it.newCards + if (fresh) 1 else 0, xp = it.xp + XP_REVIEW) }
     }
 
     suspend fun rate(id: String, r: Rating) {

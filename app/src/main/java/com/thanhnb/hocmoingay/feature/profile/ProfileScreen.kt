@@ -1,15 +1,14 @@
 package com.thanhnb.hocmoingay.feature.profile
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -17,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -31,9 +31,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.semantics.contentDescription
@@ -55,7 +52,7 @@ import com.thanhnb.hocmoingay.core.ui.rise
 import com.thanhnb.hocmoingay.feature.ScreenHeader
 import kotlin.math.roundToInt
 
-/** Tab Hồ sơ (spec §7.2): chuỗi ngày, XP, heatmap 26 tuần, 4 mạch tiếng Anh, chương thành thạo, Cài đặt. */
+/** Tab Hồ sơ (spec §7.2): chuỗi ngày, XP, lịch học 12 tuần, 4 mạch tiếng Anh, chương thành thạo, Cài đặt. */
 @Composable
 fun ProfileScreen(vm: ProfileViewModel, email: String?, onOpenSettings: () -> Unit) {
     val ui by vm.ui.collectAsStateWithLifecycle()
@@ -91,8 +88,8 @@ fun ProfileScreen(vm: ProfileViewModel, email: String?, onOpenSettings: () -> Un
                 }
             }
         }
-        Section("26 tuần gần đây", Modifier.rise(3)) {
-            Heatmap(ui.heat, cs.primary, cs.surfaceContainerHighest, ui.activeDays)
+        Section("Lịch học", Modifier.rise(3)) {
+            Heatmap(ui.heat, ui.months, cs.primary, cs.surfaceContainerHighest)
         }
         ProvideTrack(Track.ENGLISH) { Section("Tiếng Anh 7 ngày qua", Modifier.rise(4)) { StrandBars(ui.strands, ui.note) } }
         if (ui.courses.isNotEmpty()) Section("Chương đã thành thạo", Modifier.rise(5)) { ui.courses.forEach { CourseRow(it) } }
@@ -108,7 +105,7 @@ fun ProfileScreen(vm: ProfileViewModel, email: String?, onOpenSettings: () -> Un
                 Spacer(Modifier.width(14.dp))
                 Column(Modifier.weight(1f)) {
                     Text("Cài đặt", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    Text("Giao diện, thời lượng, giờ nhắc, ngôn ngữ", style = MaterialTheme.typography.bodySmall, color = cs.onSurfaceVariant)
+                    Text("Giao diện, giờ nhắc, ngôn ngữ, mật khẩu", style = MaterialTheme.typography.bodySmall, color = cs.onSurfaceVariant)
                 }
                 Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = cs.onSurfaceVariant)
             }
@@ -129,21 +126,46 @@ private fun Section(title: String, modifier: Modifier, content: @Composable Colu
     }
 }
 
+/** Lịch học kiểu GitHub: nhãn tháng trên đầu, T2/T4/T6 bên trái, chú thích Ít → Nhiều; ô co theo bề ngang màn. */
 @Composable
-private fun Heatmap(cells: List<List<Int?>>, color: Color, empty: Color, activeDays: Int) {
-    val desc = "Lịch học 26 tuần, $activeDays ngày có học"
-    Canvas(Modifier.fillMaxWidth().aspectRatio(26f / 7f).semantics { contentDescription = desc }) {
-        val gap = 2.dp.toPx()
-        val cols = cells.size.coerceAtLeast(1)
-        val side = minOf((size.width - gap * (cols - 1)) / cols, (size.height - gap * 6) / 7)
-        cells.forEachIndexed { w, col ->
-            col.forEachIndexed { d, lv ->
-                if (lv != null) drawRoundRect(
-                    color = if (lv == 0) empty else color.copy(alpha = 0.25f + 0.1875f * lv), // mức 4 → đậm hẳn
-                    topLeft = Offset(w * (side + gap), d * (side + gap)),
-                    size = Size(side, side),
-                    cornerRadius = CornerRadius(side / 4),
-                )
+private fun Heatmap(cells: List<List<Int?>>, months: List<String?>, color: Color, empty: Color) {
+    val days = cells.sumOf { c -> c.count { (it ?: 0) > 0 } }
+    val cs = MaterialTheme.colorScheme
+    val small = MaterialTheme.typography.labelSmall
+    fun tone(lv: Int) = if (lv == 0) empty else color.copy(alpha = 0.25f + 0.1875f * lv) // mức 4 → đậm hẳn
+    Text("$days ngày có học trong $HEAT_WEEKS tuần qua", style = MaterialTheme.typography.bodyMedium, color = cs.onSurfaceVariant)
+    BoxWithConstraints(Modifier.fillMaxWidth().semantics(mergeDescendants = true) { contentDescription = "Lịch học $HEAT_WEEKS tuần, $days ngày có học" }) {
+        val gap = 4.dp
+        val labelW = 26.dp
+        val n = cells.size.coerceAtLeast(1)
+        val side = minOf((maxWidth - labelW - gap * (n - 1)) / n, 22.dp)
+        Column(verticalArrangement = Arrangement.spacedBy(gap)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(gap)) {
+                Spacer(Modifier.width(labelW - gap))
+                months.forEach { m ->
+                    Box(Modifier.width(side)) {
+                        if (m != null) Text(m, style = small, color = cs.onSurfaceVariant, softWrap = false, modifier = Modifier.wrapContentWidth(Alignment.Start, unbounded = true))
+                    }
+                }
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(gap)) {
+                Column(Modifier.width(labelW - gap), verticalArrangement = Arrangement.spacedBy(gap)) {
+                    listOf("T2", "", "T4", "", "T6", "", "").forEach {
+                        Box(Modifier.height(side), contentAlignment = Alignment.CenterStart) { Text(it, style = small, color = cs.onSurfaceVariant) }
+                    }
+                }
+                cells.forEach { col ->
+                    Column(verticalArrangement = Arrangement.spacedBy(gap)) {
+                        col.forEach { lv ->
+                            Box(Modifier.size(side).then(if (lv != null) Modifier.background(tone(lv), RoundedCornerShape(4.dp)) else Modifier))
+                        }
+                    }
+                }
+            }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(3.dp, Alignment.End), verticalAlignment = Alignment.CenterVertically) {
+                Text("Ít", style = small, color = cs.onSurfaceVariant)
+                (0..4).forEach { Box(Modifier.size(12.dp).background(tone(it), RoundedCornerShape(3.dp))) }
+                Text("Nhiều", style = small, color = cs.onSurfaceVariant)
             }
         }
     }

@@ -16,7 +16,7 @@ fun ttsStatusOf(init: Int, lang: Int): Tts.Status = when {
     else -> Tts.Status.READY
 }
 
-/** Một TextToSpeech cho cả app (spec §7.2: `Locale.US`, tốc độ 0,8/1/1,2). Tạo trên main thread. */
+/** Một TextToSpeech cho cả app (`Locale.US`). Tốc độ chọn một lần dùng cho mọi thẻ, nhớ qua lần mở app. Tạo trên main thread. */
 class Tts(ctx: Context) {
     enum class Status { LOADING, READY, MISSING_DATA, UNAVAILABLE }
 
@@ -27,6 +27,9 @@ class Tts(ctx: Context) {
     /** Ai đang phát: thẻ bị huỷ (pager bỏ trang cũ) chỉ được dừng tiếng của chính nó. */
     private var owner: Any? = null
     private lateinit var engine: TextToSpeech
+    private val prefs = ctx.applicationContext.getSharedPreferences("tts", Context.MODE_PRIVATE)
+    private val _rate = MutableStateFlow(prefs.getFloat("rate", DEFAULT_RATE))
+    val rate = _rate.asStateFlow()
 
     init {
         engine = TextToSpeech(ctx.applicationContext) { code ->
@@ -40,10 +43,15 @@ class Tts(ctx: Context) {
         })
     }
 
-    fun speak(text: String, rate: Float, owner: Any) {
+    fun setRate(r: Float) {
+        _rate.value = r
+        prefs.edit().putFloat("rate", r).apply()
+    }
+
+    fun speak(text: String, owner: Any) {
         if (_status.value != Status.READY || text.isBlank()) return
         this.owner = owner
-        engine.setSpeechRate(rate)
+        engine.setSpeechRate(_rate.value)
         engine.speak(text, TextToSpeech.QUEUE_FLUSH, null, "u${System.nanoTime()}")
     }
 
@@ -58,5 +66,8 @@ class Tts(ctx: Context) {
         ctx.startActivity(Intent(TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
     }.isSuccess
 }
+
+/** 1,0 của bộ đọc Android nhanh với người mới học; mặc định chậm hơn. */
+const val DEFAULT_RATE = 0.75f
 
 val LocalTts = staticCompositionLocalOf<Tts?> { null }

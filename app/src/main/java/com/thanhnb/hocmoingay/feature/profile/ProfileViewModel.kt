@@ -31,6 +31,7 @@ class ProfileViewModel(
         val totalXp: Int = 0,
         val activeDays: Int = 0,
         val heat: List<List<Int?>> = emptyList(),
+        val months: List<String?> = emptyList(),
         val strands: Map<String, Double> = emptyMap(),
         val note: String? = null,
         val courses: List<CourseLine> = emptyList(),
@@ -51,6 +52,7 @@ class ProfileViewModel(
             totalXp = xp,
             activeDays = active.size,
             heat = heatmap(logs.associate { LocalDate.parse(it.day) to it.xp }, today),
+            months = heatMonths(today),
             strands = week,
             note = strandNote(week),
             courses = courses.mapNotNull { c ->

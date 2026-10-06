@@ -19,6 +19,7 @@ interface CurriculumDao {
     @Query("SELECT * FROM courses WHERE :showSamples OR substr(id, 1, 1) <> '_' ORDER BY sort, id")
     fun observeCourses(showSamples: Boolean): Flow<List<CourseEntity>>
     @Query("SELECT * FROM lessons WHERE id = :id") suspend fun lesson(id: String): LessonEntity?
+    @Query("SELECT * FROM lessons WHERE courseId = :courseId AND deleted = 0 ORDER BY sort") suspend fun lessonsOf(courseId: String): List<LessonEntity>
     @Query("SELECT * FROM courses WHERE id = :id") suspend fun course(id: String): CourseEntity?
     @Query("SELECT * FROM placement_questions WHERE deleted = 0") suspend fun placement(): List<PlacementEntity>
     @Query("SELECT * FROM courses WHERE id = :id") fun observeCourse(id: String): Flow<CourseEntity?>
@@ -44,6 +45,8 @@ abstract class LearnerDao {
     abstract fun observeDueCount(now: Long): Flow<Int>
     @Query("SELECT MIN(due) FROM review_cards WHERE deleted = 0 AND kind = 'recall'")
     abstract fun observeNextDue(): Flow<Long?>
+    @Query("SELECT * FROM review_cards WHERE deleted = 0 AND kind = 'recall' AND courseId = :courseId")
+    abstract fun observeRecallOf(courseId: String): Flow<List<ReviewCardEntity>>
 
     @Query("SELECT * FROM daily_log WHERE dirty = 1") abstract suspend fun dirtyDailyLog(): List<DailyLogEntity>
     @Query("SELECT * FROM daily_log WHERE deleted = 0 AND day >= :from ORDER BY day")

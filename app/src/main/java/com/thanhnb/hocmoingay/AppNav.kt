@@ -74,6 +74,8 @@ import com.thanhnb.hocmoingay.feature.review.ReviewViewModel
 import com.thanhnb.hocmoingay.feature.settings.AppSettings
 import com.thanhnb.hocmoingay.feature.settings.SettingsScreen
 import com.thanhnb.hocmoingay.feature.settings.SettingsViewModel
+import com.thanhnb.hocmoingay.feature.vocab.VocabScreen
+import com.thanhnb.hocmoingay.feature.vocab.VocabViewModel
 import com.thanhnb.hocmoingay.feature.today.TodayScreen
 import io.github.jan.supabase.auth.auth
 import kotlinx.coroutines.flow.map
@@ -176,6 +178,18 @@ fun AppNav(graph: AppGraph) {
                                 englishLevel = s.englishLevel,
                                 onOpenCourse = { backStack.add(CourseDetail(it)) },
                                 onPlacement = { backStack.add(Placement) },
+                                onOpenVocab = { backStack.add(VocabBook(it)) },
+                            )
+                        }
+                        entry<VocabBook> { k ->
+                            VocabScreen(
+                                viewModel {
+                                    VocabViewModel(
+                                        k.courseId, graph.db.curriculum()::lessonsOf, graph.db.learner().observeRecallOf(k.courseId),
+                                        graph.reviews, graph.auth::currentUserId, graph.scope,
+                                    )
+                                },
+                                onBack = { backStack.removeLastOrNull() },
                             )
                         }
                         entry<Review> {
@@ -191,7 +205,10 @@ fun AppNav(graph: AppGraph) {
                             )
                         }
                         entry<Settings> {
-                            SettingsScreen(viewModel { SettingsViewModel(graph.settings) }, onBack = { backStack.removeLastOrNull() }, onPlacement = { backStack.add(Placement) })
+                            SettingsScreen(
+                                viewModel { SettingsViewModel(graph.settings) }, onBack = { backStack.removeLastOrNull() }, onPlacement = { backStack.add(Placement) },
+                                email = graph.auth.email(), changePassword = graph.auth::changePassword,
+                            )
                         }
                         entry<Placement> {
                             PlacementScreen(
