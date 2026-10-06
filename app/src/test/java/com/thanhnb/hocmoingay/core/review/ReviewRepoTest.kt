@@ -40,6 +40,7 @@ class ReviewRepoTest {
         assertTrue(a.dirty)
         assertTrue(a.updatedAt > 5)
         assertEquals(1, logs.getValue("2026-10-05").reviews)
+        assertEquals(1, logs.getValue("2026-10-05").xp)
     }
 
     @Test fun quenTheDangReviewThiTangLapses() = runTest {

@@ -1,5 +1,7 @@
 package com.thanhnb.hocmoingay.feature.player
 
+import com.thanhnb.hocmoingay.core.lesson.CodeTask
+import com.thanhnb.hocmoingay.core.log.MinuteMeter
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.thanhnb.hocmoingay.core.db.ProgressEntity
@@ -61,18 +63,24 @@ class PlayerViewModel(
 
     fun start() { _started.value = true; shownAt = now() }
     fun answer(ok: Boolean, graded: Boolean) = _q.update { it.answer(ok, graded) }
+    private val meter = MinuteMeter { at, m -> log?.let { l -> writeScope.launch { l.add(at) { it.copy(minutes = it.minutes + m) } } } }
+
     fun next() {
         val t = now()
         val card = _q.value.current?.let { _body.value?.cards?.getOrNull(it) }
+        // Quyết định 5 của d: mỗi card tối đa 5 phút để máy treo không cộng vô hạn; card code gồm cả thời gian ở editor
+        val spent = minOf(t - shownAt, if (card is CodeTask) 30 * MINUTE_MS else 5 * MINUTE_MS)
+        if (card != null) meter.add(t, spent)
         val strand = card?.takeIf { _track.value == "english" }?.let(::strandOf)
-        if (strand != null && log != null) {
-            // Quyết định 5: mỗi card tối đa 5 phút, để máy treo không cộng vô hạn
-            val minutes = minOf(t - shownAt, 5 * MINUTE_MS) / 60_000.0
-            writeScope.launch { log.addStrands(t, mapOf(strand to minutes)) }
-        }
+        if (strand != null && log != null) writeScope.launch { log.addStrands(t, mapOf(strand to spent / 60_000.0)) }
         shownAt = t
         _q.update { it.next() }
-        if (_q.value.finished) writeScope.launch { repo.finish(lessonId, _q.value.score) }
+        if (_q.value.finished) {
+            meter.flush(t)
+            writeScope.launch { repo.finish(lessonId, _q.value.score) }
+        }
     }
+
+    override fun onCleared() = meter.flush(now())
     fun saveCard(key: String, value: JsonObject) { writeScope.launch { repo.updateCard(lessonId, key) { value } } }
 }

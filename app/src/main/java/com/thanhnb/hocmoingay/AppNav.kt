@@ -1,5 +1,8 @@
 package com.thanhnb.hocmoingay
 
+import com.thanhnb.hocmoingay.feature.reminder.NotifyCard
+import com.thanhnb.hocmoingay.feature.profile.ProfileViewModel
+import com.thanhnb.hocmoingay.feature.today.TodayViewModel
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.spring
@@ -149,7 +152,23 @@ fun AppNav(graph: AppGraph) {
                     // mỗi entry một ViewModelStore: mở bài B không dùng lại ViewModel của bài A
                     entryDecorators = listOf(rememberSaveableStateHolderNavEntryDecorator(), rememberViewModelStoreNavEntryDecorator()),
                     entryProvider = entryProvider {
-                        entry<Today> { TodayScreen(graph.settings.settings, onOpenLearn = { backStack.selectTab(Learn) }) }
+                        entry<Today> {
+                            val s by graph.settings.settings.collectAsStateWithLifecycle(AppSettings())
+                            TodayScreen(
+                                viewModel {
+                                    TodayViewModel(
+                                        graph.db.curriculum(), graph.db.learner(), graph.settings.settings,
+                                        { graph.lessons.load(it)?.body }, graph.log::dayOf, BuildConfig.SHOW_SAMPLES,
+                                    )
+                                },
+                                onOpenLearn = { backStack.selectTab(Learn) },
+                                onOpenReview = { backStack.selectTab(Review) },
+                                onOpenLesson = { backStack.add(LessonPlayer(it)) },
+                                onResolve = { l, k -> backStack.add(CodeEditor(l, k, review = true)) },
+                                onPlacement = { backStack.add(Placement) },
+                                notify = { NotifyCard(s.reminders) },
+                            )
+                        }
                         entry<Learn> {
                             val s by graph.settings.settings.collectAsStateWithLifecycle(AppSettings())
                             LearnScreen(
@@ -161,12 +180,15 @@ fun AppNav(graph: AppGraph) {
                         }
                         entry<Review> {
                             ReviewScreen(
-                                viewModel { ReviewViewModel(graph.reviews, { graph.lessons.load(it)?.body }, graph.scope, graph.db.learner().observeNextDue()) },
+                                viewModel { ReviewViewModel(graph.reviews, { graph.lessons.load(it)?.body }, graph.scope, graph.db.learner().observeNextDue(), graph.log) },
                                 online = graph.net.online.collectAsStateWithLifecycle().value, api = graph.code, icon = CardsIcon,
                             )
                         }
                         entry<Profile> {
-                            ProfileScreen(graph.supabase.auth.currentUserOrNull()?.email, onOpenSettings = { backStack.add(Settings) })
+                            ProfileScreen(
+                                viewModel { ProfileViewModel(graph.db.curriculum(), graph.db.learner(), graph.log::dayOf, BuildConfig.SHOW_SAMPLES) },
+                                graph.supabase.auth.currentUserOrNull()?.email, onOpenSettings = { backStack.add(Settings) },
+                            )
                         }
                         entry<Settings> {
                             SettingsScreen(viewModel { SettingsViewModel(graph.settings) }, onBack = { backStack.removeLastOrNull() }, onPlacement = { backStack.add(Placement) })
@@ -196,7 +218,7 @@ fun AppNav(graph: AppGraph) {
                                 viewModel {
                                     EditorViewModel(
                                         k.lessonId, k.cardKey, graph.lessons, graph.db.drafts(), graph.code, graph.net.online,
-                                        graph.settings.settings.map { it.preferredLanguage }, graph.scope,
+                                        graph.settings.settings.map { it.preferredLanguage }, graph.scope, review = k.review,
                                     )
                                 },
                                 onBack = { backStack.removeLastOrNull() },

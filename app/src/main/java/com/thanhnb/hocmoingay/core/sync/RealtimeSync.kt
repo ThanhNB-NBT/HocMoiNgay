@@ -1,5 +1,7 @@
 package com.thanhnb.hocmoingay.core.sync
 
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import android.util.Log
 import com.thanhnb.hocmoingay.core.db.LEARNER_TABLES
 import io.github.jan.supabase.SupabaseClient
@@ -19,7 +21,13 @@ import kotlinx.serialization.json.JsonObject
 
 /** postgres_changes trên các bảng người học khi app ở foreground; mất kết nối thì SyncWorker vẫn bù. */
 class RealtimeSync(private val supabase: SupabaseClient, private val engine: SyncEngine) {
-    suspend fun run(userId: String): Nothing = coroutineScope {
+    // Activity dựng lại (bấm thông báo, vào nền/ra lại nhanh): lượt mới phải chờ lượt cũ removeChannel xong,
+    // nếu không supabase.channel() trả lại kênh cũ đã join và postgresChangeFlow ném IllegalStateException.
+    private val serial = Mutex()
+
+    suspend fun run(userId: String): Nothing = serial.withLock { listen(userId) }
+
+    private suspend fun listen(userId: String): Nothing = coroutineScope {
         val ch = supabase.channel("learner-$userId")
         for (table in LEARNER_TABLES) {
             ch.postgresChangeFlow<PostgresAction>(schema = "public") {

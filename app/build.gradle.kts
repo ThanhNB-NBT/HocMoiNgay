@@ -62,6 +62,15 @@ android {
             initWith(getByName("release"))
             matchingFallbacks += "release"
             useDevServer()
+            isProfileable = true // macrobenchmark đo cold start (Task 8 của e)
+        }
+        // Chỉ để sinh baseline profile: như devRelease nhưng không R8 (profile cần tên lớp thật; AGP tự ánh xạ qua R8 khi build release).
+        // File kết quả nằm ở src/main/baselineProfiles và dùng cho mọi variant.
+        create("devBench") {
+            initWith(getByName("devRelease"))
+            matchingFallbacks += listOf("devRelease", "release")
+            isMinifyEnabled = false
+            isShrinkResources = false
         }
     }
 
@@ -86,6 +95,7 @@ kotlin {
 room { schemaDirectory("$projectDir/schemas") }
 
 dependencies {
+    implementation("androidx.profileinstaller:profileinstaller:1.4.1")
     implementation(platform("androidx.compose:compose-bom:2026.09.00"))
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-core:1.7.8")

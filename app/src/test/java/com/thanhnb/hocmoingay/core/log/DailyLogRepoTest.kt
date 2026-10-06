@@ -51,4 +51,12 @@ class DailyLogRepoTest {
         assertTrue(rows.isEmpty())
         assertEquals(0, writes)
     }
+
+    @Test fun dauNgayMaiTheoGioMay() =
+        assertEquals(Instant.parse("2026-10-05T17:00:00Z").toEpochMilli(), repo.nextDayStart(at)) // 0 giờ 6/10 giờ VN
+
+    @Test fun docHangCuaNgay() = runTest {
+        repo.add(at) { it.copy(xp = 3) }
+        assertEquals(3, repo.day(at)?.xp)
+    }
 }

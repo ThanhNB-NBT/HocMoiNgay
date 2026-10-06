@@ -1,5 +1,6 @@
 package com.thanhnb.hocmoingay.feature.player
 
+import com.thanhnb.hocmoingay.core.lesson.MASTERED
 import com.thanhnb.hocmoingay.core.lesson.codePending
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateFloatAsState
@@ -79,7 +80,7 @@ fun PlayerScreen(vm: PlayerViewModel, lessonId: String, onBack: () -> Unit, onOp
             TopBar(q.progress, onBack)
             when {
                 !started -> Intro(body, lessonId, vm::start)
-                q.finished -> Done(q.score, body.codePending(states), body.hasReview, onBack)
+                q.finished -> Done(q.score, body.codePending(states), body.hasReview, body.kind == "checkpoint", onBack)
                 else -> {
                     // số trang tăng khi card sai được thêm vào cuối: lambda phải đọc giá trị mới, không phải q lúc dựng đầu
                     val pages by rememberUpdatedState(q.order.size)
@@ -173,12 +174,12 @@ private fun BottomBar(q: PlayerQueue, onNext: () -> Unit) {
 
 /** Khoảnh khắc mạnh của màn: khối coral có điểm đếm tăng dần. */
 @Composable
-private fun Done(score: Int, codePending: Boolean, hasReview: Boolean, onBack: () -> Unit) {
+private fun Done(score: Int, codePending: Boolean, hasReview: Boolean, checkpoint: Boolean, onBack: () -> Unit) {
     val f = LocalFun.current
     Column(Modifier.fillMaxSize().padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(20.dp)) {
         Spacer(Modifier.weight(1f))
         Critter(Modifier.size(96.dp))
-        Text("Xong bài!", style = MaterialTheme.typography.displaySmall)
+        Text(if (checkpoint) "Xong bài kiểm!" else "Xong bài!", style = MaterialTheme.typography.displaySmall)
         Pushable(null, f.coralContainer, RoundedCornerShape(32.dp), Modifier.fillMaxWidth(), edge = f.coral) {
             Column(Modifier.fillMaxWidth().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 Row(verticalAlignment = Alignment.Bottom) {
@@ -189,6 +190,8 @@ private fun Done(score: Int, codePending: Boolean, hasReview: Boolean, onBack: (
             }
         }
         val note = when {
+            checkpoint && score >= MASTERED -> "Từ 80% trở lên: chương này đã thành thạo."
+            checkpoint -> "Chưa tới 80%. Ôn lại các thẻ của chương, mai làm lại nhé — chương sau vẫn mở."
             codePending -> "Bài code còn để sau — nộp đạt thì bài mới tính là xong."
             hasReview -> "Các thẻ đánh dấu ôn tập đã vào lịch ôn."
             else -> null

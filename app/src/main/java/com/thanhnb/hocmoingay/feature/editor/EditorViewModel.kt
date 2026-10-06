@@ -1,5 +1,6 @@
 package com.thanhnb.hocmoingay.feature.editor
 
+import com.thanhnb.hocmoingay.core.lesson.checkpointOrigin
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.thanhnb.hocmoingay.core.db.CodeDraftDao
@@ -58,8 +59,11 @@ class EditorViewModel(
     val online: StateFlow<Boolean>,
     private val preferred: Flow<String>,
     private val flushScope: CoroutineScope,              // graph.scope: nháp cuối vẫn được ghi sau khi màn đóng
+    private val review: Boolean = false,                 // giải lại thẻ resolve từ Hôm nay: gợi ý tính lại từ 0, ngôn ngữ ưa thích
     private val now: () -> Long = System::currentTimeMillis,
 ) : ViewModel() {
+    private var sessionFails = 0
+    private val src = checkpointOrigin(lessonId, cardKey) // bài kiểm: server và nháp dùng bài/khoá gốc, tiến độ ghi vào hàng bài kiểm
     private val _ui = MutableStateFlow(EditorUi())
     val ui = _ui.asStateFlow()
     private val pending = MutableStateFlow<CodeDraftEntity?>(null)
@@ -72,10 +76,10 @@ class EditorViewModel(
             val card = l?.body?.cards?.firstOrNull { it.key == cardKey } as? CodeTask
             if (card == null || card.langs.isEmpty()) { _ui.update { it.copy(missing = true) }; return@launch }
             val st = repo.cardState(lessonId, cardKey)
-            _ui.update { it.copy(body = l.body, card = card, hints = st.int("hints")) }
+            _ui.update { it.copy(body = l.body, card = card, hints = if (review) 0 else st.int("hints")) }
             val saved = repo.language(lessonId)
             val pref = preferred.first()
-            pick(listOf(saved, pref).firstOrNull { it != null && it in card.langs } ?: card.langs.first())
+            pick(listOf(if (review) null else saved, pref).firstOrNull { it != null && it in card.langs } ?: card.langs.first())
         }
     }
 
@@ -87,12 +91,12 @@ class EditorViewModel(
         _ui.update { it.copy(lang = lang, code = null, notice = null, hintLines = null) }
         viewModelScope.launch {
             repo.setLanguage(lessonId, lang)
-            val draft = drafts.get(lessonId, cardKey, lang)
-            val code = draft ?: card.starterFor(lang) ?: when (val r = api.starter(lessonId, cardKey, lang)) {
+            val draft = drafts.get(src.first, src.second, lang)
+            val code = draft ?: card.starterFor(lang) ?: when (val r = api.starter(src.first, src.second, lang)) {
                 is ApiResult.Ok -> r.value
                 is ApiResult.Err -> { _ui.update { it.copy(notice = "Chưa tải được code khởi đầu: ${r.message}") }; "" }
             }
-            if (draft == null && code.isNotEmpty()) drafts.put(CodeDraftEntity(lessonId, cardKey, lang, code, now()))
+            if (draft == null && code.isNotEmpty()) drafts.put(CodeDraftEntity(src.first, src.second, lang, code, now()))
             if (_ui.value.lang == lang) _ui.update { it.copy(code = code) }
             if (_ui.value.hints >= _ui.value.maxHints && _ui.value.maxHints > 0) loadHintLines(cacheOnly = true)
         }
@@ -101,7 +105,7 @@ class EditorViewModel(
     fun onEdit(code: String) {
         val lang = _ui.value.lang ?: return
         _ui.update { it.copy(code = code) }
-        pending.value = CodeDraftEntity(lessonId, cardKey, lang, code, now())
+        pending.value = CodeDraftEntity(src.first, src.second, lang, code, now())
     }
 
     /** Ghi nháp đang chờ. Gọi khi đổi ngôn ngữ và khi màn đóng (onCleared), trên scope sống lâu hơn ViewModel. */
@@ -113,23 +117,18 @@ class EditorViewModel(
     override fun onCleared() = flush()
 
     fun run() = act(EditorUi.Busy.RUN) { lang, code ->
-        when (val r = api.runTests(lessonId, cardKey, lang, code)) {
+        when (val r = api.runTests(src.first, src.second, lang, code)) {
             is ApiResult.Ok -> Outcome.Ran(r.value)
             is ApiResult.Err -> Outcome.Failed(r.message)
         }
     }
 
     fun submit() = act(EditorUi.Busy.SUBMIT) { lang, code ->
-        when (val r = api.submit(lessonId, cardKey, lang, code, _ui.value.hints)) {
+        when (val r = api.submit(src.first, src.second, lang, code, _ui.value.hints)) {
             is ApiResult.Ok -> {
                 val pass = r.value.allPass
-                repo.updateCard(lessonId, cardKey) { s ->
-                    JsonObject(
-                        s + if (pass) mapOf("pass" to JsonPrimitive(true), "lang" to JsonPrimitive(lang), "hints" to JsonPrimitive(_ui.value.hints))
-                        else if ((s["pass"] as? JsonPrimitive)?.booleanOrNull == true) emptyMap() // đã đạt rồi: fails chỉ đếm trượt trước lần đạt đầu
-                        else mapOf("fails" to JsonPrimitive(s.int("fails") + 1)),
-                    )
-                }
+                repo.recordSubmit(lessonId, cardKey, lang, pass, _ui.value.hints, review, sessionFails)
+                if (!pass) sessionFails++
                 Outcome.Submitted(r.value)
             }
             is ApiResult.Err -> Outcome.Failed(r.message)
@@ -161,8 +160,10 @@ class EditorViewModel(
         val level = s.hints + 1
         _ui.update { it.copy(hints = level) }
         viewModelScope.launch {
-            repo.useHint(lessonId, level)
-            repo.updateCard(lessonId, cardKey) { JsonObject(it + ("hints" to JsonPrimitive(level))) }
+            if (!review) { // lượt ôn không ghi đè số gợi ý của lần giải đầu
+                repo.useHint(lessonId, level)
+                repo.updateCard(lessonId, cardKey) { JsonObject(it + ("hints" to JsonPrimitive(level))) }
+            }
             if (level == s.maxHints) loadHintLines(cacheOnly = false)
         }
     }
@@ -173,7 +174,7 @@ class EditorViewModel(
         if (cached != null) { _ui.update { it.copy(hintLines = cached.map { e -> e.jsonPrimitive.content }) }; return }
         if (cacheOnly) return
         _ui.update { it.copy(busy = EditorUi.Busy.HINT) }
-        when (val r = api.hint(lessonId, cardKey, lang)) {
+        when (val r = api.hint(src.first, src.second, lang)) {
             is ApiResult.Ok -> {
                 repo.updateCard(lessonId, cardKey) { s ->
                     val old = s["hint_lines"] as? JsonObject ?: JsonObject(emptyMap())

@@ -98,4 +98,6 @@ class SettingsTest {
         repo().update { it.copy(dailyMinutes = 30) }
         assertEquals(1, writes)
     }
+
+    @Test fun gioNhacMacDinhTheoSpec() = assertEquals(listOf("20:30"), AppSettings().reminders)
 }

@@ -1,7 +1,6 @@
 package com.thanhnb.hocmoingay.feature.today
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,10 +12,10 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -24,24 +23,21 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.thanhnb.hocmoingay.core.theme.JetBrainsMono
 import com.thanhnb.hocmoingay.core.theme.LocalTrack
 import com.thanhnb.hocmoingay.core.theme.ProvideTrack
 import com.thanhnb.hocmoingay.core.theme.Track
-import com.thanhnb.hocmoingay.core.ui.Cookie
 import com.thanhnb.hocmoingay.core.ui.Critter
-import com.thanhnb.hocmoingay.core.ui.Flower
+import com.thanhnb.hocmoingay.core.theme.LocalFun
 import com.thanhnb.hocmoingay.core.ui.PushButton
 import com.thanhnb.hocmoingay.core.ui.Pushable
 import com.thanhnb.hocmoingay.core.ui.TickUpNumber
 import com.thanhnb.hocmoingay.core.ui.rise
-import com.thanhnb.hocmoingay.feature.settings.AppSettings
-import kotlinx.coroutines.flow.Flow
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
@@ -60,12 +56,28 @@ fun vnDate(d: LocalDate): String {
     return "$thu, ${d.dayOfMonth} tháng ${d.monthValue}"
 }
 
-/** Khung tab Hôm nay. Plan e thay thẻ mục tiêu bằng hàng đợi bài + thẻ ôn thật, thêm chuỗi ngày. */
+/** Tab Hôm nay (spec §7.4): thẻ ngày (phút/XP/chuỗi) + hàng đợi ôn thẻ → mục code → bài tiếng Anh. */
 @Composable
-fun TodayScreen(settings: Flow<AppSettings>, onOpenLearn: () -> Unit) {
-    val s by settings.collectAsStateWithLifecycle(AppSettings())
+fun TodayScreen(
+    vm: TodayViewModel,
+    onOpenLearn: () -> Unit,
+    onOpenReview: () -> Unit,
+    onOpenLesson: (String) -> Unit,
+    onResolve: (lessonId: String, cardKey: String) -> Unit,
+    onPlacement: () -> Unit,
+    notify: @Composable () -> Unit = {},
+) {
+    val ui by vm.ui.collectAsStateWithLifecycle()
     val (hello, date) = remember { greeting(LocalTime.now().hour) to vnDate(LocalDate.now()) }
     val type = MaterialTheme.typography
+    fun open(item: TodayItem) = when (item) {
+        is ReviewBlock -> onOpenReview()
+        is Pick -> when (item.kind) {
+            PickKind.PLACEMENT -> onPlacement()
+            PickKind.RESOLVE -> onResolve(item.lessonId, item.cardKey.orEmpty())
+            else -> onOpenLesson(item.lessonId)
+        }
+    }
 
     Column(Modifier.fillMaxSize().safeDrawingPadding().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)) {
         Row(Modifier.padding(top = 20.dp, bottom = 22.dp).rise(0), verticalAlignment = Alignment.CenterVertically) {
@@ -75,67 +87,98 @@ fun TodayScreen(settings: Flow<AppSettings>, onOpenLearn: () -> Unit) {
             }
             Critter(Modifier.size(68.dp))
         }
-        GoalCard(s.dailyMinutes, onOpenLearn, Modifier.rise(1))
-        Text("Hai mảng để học", style = type.headlineSmall, modifier = Modifier.padding(top = 32.dp, bottom = 14.dp).rise(2))
-        TrackCard(
-            Track.CODE, "Lập trình", "Đọc, viết và chạy code thật ngay trên máy", "print(\"xin chào\")",
-            mono = true, badge = Cookie, glyph = "</>", onOpenLearn, Modifier.rise(3),
-        )
-        Spacer(Modifier.height(14.dp))
-        TrackCard(
-            Track.ENGLISH, "Tiếng Anh công việc", "Họp, email, phỏng vấn: nghe rồi nói to", "Quick sync at 3pm?",
-            mono = false, badge = Flower, glyph = "Aa", onOpenLearn, Modifier.rise(4),
-        )
+        DayCard(ui, Modifier.rise(1))
+        notify()
+        Text("Việc hôm nay", style = type.headlineSmall, modifier = Modifier.padding(top = 28.dp, bottom = 12.dp).rise(2))
+        when {
+            ui.loading -> Unit
+            ui.plan.isEmpty() -> AllDone(onOpenLearn, Modifier.rise(3))
+            else -> ui.plan.forEachIndexed { i, p ->
+                PlanRow(p, Modifier.rise(3 + i)) { open(p.item) }
+                Spacer(Modifier.height(12.dp))
+            }
+        }
         Spacer(Modifier.height(28.dp))
     }
 }
 
+fun streakText(n: Int) = if (n == 0) "Chưa có chuỗi ngày" else "Chuỗi $n ngày"
+
 @Composable
-private fun GoalCard(minutes: Int, onStart: () -> Unit, modifier: Modifier) {
+private fun DayCard(ui: TodayViewModel.Ui, modifier: Modifier) {
     val cs = MaterialTheme.colorScheme
     Pushable(null, cs.primaryContainer, RoundedCornerShape(32.dp), modifier.fillMaxWidth()) {
         Column(Modifier.padding(22.dp)) {
-            Text("Mục tiêu mỗi ngày", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = cs.onPrimaryContainer)
+            Text("Hôm nay", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = cs.onPrimaryContainer)
             Row(verticalAlignment = Alignment.Bottom) {
-                TickUpNumber(minutes, MaterialTheme.typography.displayLarge.copy(fontSize = 72.sp, fontWeight = FontWeight.Bold), cs.onPrimaryContainer)
-                Spacer(Modifier.width(8.dp))
-                Text("phút", style = MaterialTheme.typography.headlineSmall, color = cs.onPrimaryContainer, modifier = Modifier.padding(bottom = 14.dp))
+                TickUpNumber(ui.doneMinutes, MaterialTheme.typography.displayLarge.copy(fontSize = 72.sp, fontWeight = FontWeight.Bold), cs.onPrimaryContainer)
+                Text(
+                    "/${ui.dailyMinutes} phút", style = MaterialTheme.typography.headlineSmall, color = cs.onPrimaryContainer,
+                    modifier = Modifier.padding(start = 6.dp, bottom = 14.dp),
+                )
             }
-            Text(
-                "Mỗi sáng app xếp sẵn bài mới và thẻ cần ôn vừa đủ chừng này.",
-                style = MaterialTheme.typography.bodyMedium, color = cs.onPrimaryContainer,
+            LinearProgressIndicator(
+                progress = { (ui.doneMinutes.toFloat() / ui.dailyMinutes).coerceIn(0f, 1f) },
+                modifier = Modifier.fillMaxWidth().height(10.dp),
+                color = cs.onPrimaryContainer, trackColor = cs.onPrimaryContainer.copy(alpha = 0.15f), strokeCap = StrokeCap.Round,
             )
-            Spacer(Modifier.height(18.dp))
-            PushButton(
-                "Bắt đầu học", onStart, Modifier.fillMaxWidth(),
-                color = cs.onPrimaryContainer, contentColor = cs.primaryContainer, icon = Icons.AutoMirrored.Filled.ArrowForward,
-            )
+            Spacer(Modifier.height(14.dp))
+            Text("${streakText(ui.streak)} · +${ui.xpToday} XP hôm nay", style = MaterialTheme.typography.bodyLarge, color = cs.onPrimaryContainer)
         }
     }
 }
 
+/** (nhãn, tiêu đề, ghi chú) của một mục. */
+fun describe(item: TodayItem): Triple<String, String, String> = when (item) {
+    is ReviewBlock -> Triple("Ôn tập", "Ôn ${item.cards.size} thẻ đến hạn", "Xen kẽ các khoá, thẻ quá hạn lâu nhất trước")
+    is Pick -> when (item.kind) {
+        PickKind.RESOLVE -> Triple("Giải lại", item.title, "Bài luyện code đến hạn ôn, làm bằng ngôn ngữ ưa thích")
+        PickKind.CHECKPOINT -> Triple("Kiểm tra cuối chương", item.title, "Đạt từ 80% là chương thành thạo")
+        PickKind.NEXT -> Triple(if (item.track == "english") "Tiếng Anh" else "Bài tiếp theo", item.title, "Học tiếp từ chỗ đang dừng")
+        PickKind.PRACTICE -> Triple("Luyện code", item.title, "Bài luyện theo mẫu giải đã gặp")
+        PickKind.PLACEMENT -> Triple("Tiếng Anh", item.title, "Khoảng 30 câu để biết nên bắt đầu từ cấp nào")
+    }
+}
+
 @Composable
-private fun TrackCard(
-    track: Track, title: String, note: String, sample: String, mono: Boolean,
-    badge: Shape, glyph: String, onClick: () -> Unit, modifier: Modifier,
-) = ProvideTrack(track) {
-    val t = LocalTrack.current
-    Pushable(onClick, t.container, RoundedCornerShape(28.dp), modifier.fillMaxWidth(), edge = t.accent) {
-        Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(64.dp).background(t.accent, badge), contentAlignment = Alignment.Center) {
-                Text(glyph, color = t.onAccent, fontFamily = JetBrainsMono, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+private fun PlanRow(p: Planned, modifier: Modifier, onClick: () -> Unit) {
+    val track = when ((p.item as? Pick)?.track) { "english" -> Track.ENGLISH; "code" -> Track.CODE; else -> null }
+    val content = @Composable {
+        val (label, title, note) = describe(p.item)
+        val cs = MaterialTheme.colorScheme
+        val face = if (track == null) cs.secondaryContainer else LocalTrack.current.container
+        val ink = if (track == null) cs.onSecondaryContainer else LocalTrack.current.onContainer
+        Pushable(onClick, face, RoundedCornerShape(24.dp), modifier.fillMaxWidth()) {
+            Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(label, style = MaterialTheme.typography.labelLarge, color = ink.copy(alpha = 0.8f))
+                    Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = ink, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    Text(note, style = MaterialTheme.typography.bodyMedium, color = ink)
+                }
+                Spacer(Modifier.width(12.dp))
+                Column(horizontalAlignment = Alignment.End) {
+                    Text("${p.item.minutes} phút", style = MaterialTheme.typography.labelLarge, color = ink)
+                    if (p.extra) Text(
+                        "thêm", style = MaterialTheme.typography.labelMedium, color = ink,
+                        modifier = Modifier.padding(top = 4.dp).background(ink.copy(alpha = 0.12f), CircleShape).padding(horizontal = 8.dp, vertical = 2.dp),
+                    )
+                }
             }
-            Spacer(Modifier.width(16.dp))
-            Column(Modifier.weight(1f)) {
-                Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = t.onContainer)
-                Text(note, style = MaterialTheme.typography.bodyMedium, color = t.onContainer)
-                Spacer(Modifier.height(10.dp))
-                Text(
-                    sample, color = t.onContainer, maxLines = 1,
-                    style = MaterialTheme.typography.labelLarge, fontFamily = if (mono) JetBrainsMono else null,
-                    modifier = Modifier.background(t.onContainer.copy(alpha = 0.08f), RoundedCornerShape(10.dp)).padding(horizontal = 10.dp, vertical = 5.dp),
-                )
-            }
+        }
+    }
+    if (track != null) ProvideTrack(track) { content() } else content()
+}
+
+@Composable
+private fun AllDone(onOpenLearn: () -> Unit, modifier: Modifier) {
+    val f = LocalFun.current
+    val ink = MaterialTheme.colorScheme.onSurface
+    Pushable(null, f.mintContainer, RoundedCornerShape(28.dp), modifier.fillMaxWidth(), edge = f.mint) {
+        Column(Modifier.padding(20.dp)) {
+            Text("Xong việc hôm nay", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = ink)
+            Text("Không còn thẻ đến hạn hay bài đang chờ. Muốn học thêm thì chọn khoá ở tab Học.", style = MaterialTheme.typography.bodyMedium, color = ink)
+            Spacer(Modifier.height(14.dp))
+            PushButton("Mở tab Học", onOpenLearn, Modifier.fillMaxWidth())
         }
     }
 }

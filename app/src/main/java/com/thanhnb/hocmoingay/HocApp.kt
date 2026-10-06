@@ -1,5 +1,8 @@
 package com.thanhnb.hocmoingay
 
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.distinctUntilChanged
+import com.thanhnb.hocmoingay.feature.reminder.Reminders
 import android.app.Application
 import androidx.work.WorkManager
 import com.thanhnb.hocmoingay.core.auth.AuthRepo
@@ -53,6 +56,9 @@ class AppGraph(app: Application) {
             observePulled = db.syncState().observeCursor("settings").map { it != null },
         )
     }
+    val log = db.learner().let { l ->
+        DailyLogRepo({ l.dailyLogByKeys(listOf(it)).firstOrNull() }, { l.upsertDailyLog(listOf(it)) }, dbTx(db), auth::currentUserId, scheduler::afterWrite)
+    }
     val lessons = LessonRepo(
         lesson = db.curriculum()::lesson,
         track = { db.curriculum().course(it)?.track },
@@ -63,10 +69,9 @@ class AppGraph(app: Application) {
         tx = dbTx(db),
         userId = auth::currentUserId,
         afterWrite = scheduler::afterWrite,
+        log = log,
+        course = db.curriculum()::course,
     )
-    val log = db.learner().let { l ->
-        DailyLogRepo({ l.dailyLogByKeys(listOf(it)).firstOrNull() }, { l.upsertDailyLog(listOf(it)) }, dbTx(db), auth::currentUserId, scheduler::afterWrite)
-    }
     val reviews = db.learner().let { l ->
         ReviewRepo(l::dueRecall, l::reviewCardsByKeys, { l.upsertReviewCards(listOf(it)) }, log, dbTx(db), scheduler::afterWrite)
     }
@@ -82,4 +87,10 @@ class AppGraph(app: Application) {
         }
     }
     val assets = Assets(File(app.cacheDir, "assets")) { supabase.storage.from("content").downloadAuthenticated(it) }
+    val reminders = Reminders(WorkManager.getInstance(app))
+
+    init {
+        // Giờ nhắc theo Cài đặt (spec §7.4): mở app và mỗi lần đổi giờ thì khớp lại lịch
+        scope.launch { settings.settings.map { it.reminders }.distinctUntilChanged().collect { reminders.sync(it) } }
+    }
 }

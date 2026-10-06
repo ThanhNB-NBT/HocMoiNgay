@@ -29,7 +29,7 @@ data class LessonBody(
     @Transient val cards: List<Card> = emptyList(), // parse riêng từng card để một card hỏng không kéo cả bài
 ) {
     /** Bài có thẻ ôn (card `review: true` hoặc ghi chú `review`): màn Xong mới nói "đã vào lịch ôn". */
-    val hasReview: Boolean get() = cards.any { it.review } || review.isNotEmpty()
+    val hasReview: Boolean get() = kind != "checkpoint" && (cards.any { it.review } || review.isNotEmpty())
 }
 
 @Serializable data class ReviewNote(val key: String, val front: String, val back: String)

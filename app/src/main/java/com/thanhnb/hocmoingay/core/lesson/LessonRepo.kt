@@ -1,5 +1,16 @@
 package com.thanhnb.hocmoingay.core.lesson
 
+import java.time.Instant
+import java.time.ZoneId
+import com.thanhnb.hocmoingay.core.log.XP_CHECKPOINT
+import com.thanhnb.hocmoingay.core.review.reviewed
+import com.thanhnb.hocmoingay.core.review.resolveRating
+import com.thanhnb.hocmoingay.core.log.XP_CODE_FIRST_TRY
+import kotlinx.serialization.json.intOrNull
+import com.thanhnb.hocmoingay.core.db.CourseEntity
+import com.thanhnb.hocmoingay.core.log.DailyLogRepo
+import com.thanhnb.hocmoingay.core.log.NEW_CARDS_PER_DAY
+import com.thanhnb.hocmoingay.core.log.XP_LESSON
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.JsonPrimitive
 import com.thanhnb.hocmoingay.core.db.LessonEntity
@@ -35,13 +46,29 @@ class LessonRepo(
     private val afterWrite: () -> Unit,
     private val now: () -> Long = System::currentTimeMillis,
     private val cpu: CoroutineDispatcher = Dispatchers.Default, // test truyền dispatcher của runTest
+    private val log: DailyLogRepo? = null,                      // null ở test cũ: không ghi XP/thẻ mới
+    private val course: suspend (String) -> CourseEntity? = { null }, // đề cương để dựng bài kiểm cuối chương
 ) {
     data class Loaded(val entity: LessonEntity, val body: LessonBody, val track: String = "code")
 
     suspend fun load(lessonId: String): Loaded? {
+        if (isCheckpoint(lessonId)) return loadCheckpoint(lessonId)
         val e = lesson(lessonId) ?: return null
         val b = withContext(cpu) { parseLesson(e.body) } ?: return null
         return Loaded(e, b, track(e.courseId) ?: "code")
+    }
+
+    /** Bài kiểm ảo: dựng từ các bài của chương trong Room, hạt giống "chương + ngày". */
+    private suspend fun loadCheckpoint(id: String): Loaded? {
+        val parts = chapterOf(id).split('/')
+        if (parts.size != 3) return null
+        val (courseId, level, chapterId) = parts
+        val c = course(courseId) ?: return null
+        val ch = parseOutline(c.outline).firstOrNull { it.level == level }?.chapters?.firstOrNull { it.id == chapterId } ?: return null
+        val lessons = ch.lessons.mapNotNull { o -> lesson(o.id)?.let { o.id to it.body } }
+        val day = Instant.ofEpochMilli(now()).atZone(ZoneId.systemDefault()).toLocalDate().toEpochDay()
+        val body = withContext(cpu) { buildCheckpoint(ch.title, lessons, "${chapterOf(id)}#$day".hashCode()) } ?: return null
+        return Loaded(LessonEntity(id, courseId, body = "{}"), body, c.track)
     }
 
     private suspend fun edit(lessonId: String, change: (ProgressEntity) -> ProgressEntity) {
@@ -75,29 +102,102 @@ class LessonRepo(
     /** Số nấc gợi ý đã mở (chỉ tăng); d dùng để chấm thẻ resolve. */
     suspend fun useHint(lessonId: String, level: Int) = edit(lessonId) { it.copy(hintsUsed = maxOf(it.hintsUsed, level)) }
 
-    /** Xong bài: `done`, điểm cao nhất, và thẻ recall (New, đến hạn ngay) cho card `review: true` và ghi chú `review` chưa có thẻ. */
+    /**
+     * Một lần nộp code (thay khối ghi card_state trước đây nằm trong EditorViewModel).
+     * - Lượt thường: đạt → pass/lang/hints; trượt trước lần đạt đầu → fails + 1 (Quyết định 7 của d).
+     * - Đạt lần đầu với 0 lần trượt: +10 XP.
+     * - Bài `problem`: chưa có thẻ `resolve` thì tạo và chấm ngay theo (gợi ý, fails). Lượt giải lại ([review])
+     *   chấm thẻ đó theo gợi ý và [sessionFails] của chính lượt này, không sửa card_state, không cộng XP.
+     */
+    suspend fun recordSubmit(
+        lessonId: String, key: String, lang: String, pass: Boolean, hints: Int,
+        review: Boolean = false, sessionFails: Int = 0,
+    ) {
+        val uid = userId() ?: return
+        val before = cardState(lessonId, key)
+        if (!review) updateCard(lessonId, key) { s ->
+            JsonObject(
+                s + when {
+                    pass -> mapOf("pass" to JsonPrimitive(true), "lang" to JsonPrimitive(lang), "hints" to JsonPrimitive(hints))
+                    s.flag("pass") -> emptyMap() // đã đạt rồi: fails chỉ đếm trượt trước lần đạt đầu
+                    else -> mapOf("fails" to JsonPrimitive(s.count("fails") + 1))
+                },
+            )
+        }
+        if (!pass) return
+        val t = now()
+        val fails = before.count("fails")
+        if (!review && !before.flag("pass") && fails == 0) log?.add(t) { it.copy(xp = it.xp + XP_CODE_FIRST_TRY) }
+        val l = load(lessonId) ?: return
+        if (l.body.kind != "problem") return
+        val ref = "$lessonId#$key"
+        val cardId = ReviewCardIds.of(uid, ref)
+        var wrote = false
+        tx {
+            val raw = cardsByIds(listOf(cardId)).firstOrNull()
+            val old = raw?.takeUnless { it.deleted }
+            if (old != null && !review) return@tx // nộp lại ngoài lượt ôn: lịch giữ nguyên
+            val base = old ?: ReviewCardEntity(
+                id = cardId, userId = uid, ref = ref, kind = "resolve", track = l.track, courseId = l.entity.courseId,
+                due = t, updatedAt = 0,
+            )
+            val r = if (review) resolveRating(hints, sessionFails) else resolveRating(hints, fails)
+            // đọc updatedAt cả của hàng đã xoá để bản mới thắng LWW (minor 1 của c)
+            putCards(listOf(base.reviewed(r, t).copy(updatedAt = nextUpdatedAt(raw?.updatedAt, t), dirty = true, deleted = false)))
+            wrote = true
+        }
+        if (wrote) afterWrite()
+    }
+
+    /**
+     * Xong bài: `done`, điểm cao nhất, và thẻ recall (New) cho card `review: true` và ghi chú `review` chưa có thẻ.
+     * Quá [NEW_CARDS_PER_DAY] thẻ mới trong ngày thì thẻ dư hẹn từ 0 giờ hôm sau (spec §7.4).
+     * Lần đầu thành `done`: `lessons` + 1, +20 XP.
+     */
     suspend fun finish(lessonId: String, score: Int) {
         val uid = userId() ?: return
         val l = load(lessonId) ?: return
         val trackName = l.track
         val t = now()
+        var firstDone = false
+        val cp = isCheckpoint(lessonId)
+        var firstMastered = false
         edit(lessonId) { p ->
             val best = maxOf(p.score ?: 0, score)
             if (l.body.codePending(cardStateOf(p))) p.copy(score = best)
-            else p.copy(status = "done", score = best, completedAt = p.completedAt ?: t)
+            else {
+                firstDone = p.status != "done"
+                firstMastered = cp && best >= MASTERED && (p.score ?: 0) < MASTERED
+                p.copy(status = "done", score = best, completedAt = p.completedAt ?: t)
+            }
         }
-        val refs = l.body.cards.filter { it.review }.map { "$lessonId#${it.key}" } + l.body.review.map { "$lessonId#${it.key}" }
+        // bài kiểm dùng lại card của chương: thẻ ôn đã có từ bài gốc
+        val refs = if (cp) emptyList() else l.body.cards.filter { it.review }.map { "$lessonId#${it.key}" } + l.body.review.map { "$lessonId#${it.key}" }
+        val usedToday = log?.day(t)?.newCards ?: 0
+        var fresh = 0
         tx {
             val ids = refs.associateBy { ReviewCardIds.of(uid, it) }
             val have = cardsByIds(ids.keys.toList()).filterNot { it.deleted }.map { it.id }.toSet()
-            val fresh = ids.filterKeys { it !in have }.map { (id, ref) ->
+            val add = ids.filterKeys { it !in have }.entries.mapIndexed { i, (id, ref) ->
+                val due = if (log == null || usedToday + i < NEW_CARDS_PER_DAY) t else log.nextDayStart(t)
                 ReviewCardEntity(
                     id = id, userId = uid, ref = ref, kind = "recall", track = trackName, courseId = l.entity.courseId,
-                    due = t, updatedAt = nextUpdatedAt(null, t), dirty = true,
+                    due = due, updatedAt = nextUpdatedAt(null, t), dirty = true,
                 )
             }
-            if (fresh.isNotEmpty()) putCards(fresh)
+            fresh = add.size
+            if (add.isNotEmpty()) putCards(add)
         }
         afterWrite()
+        if (log != null && (firstDone || firstMastered || fresh > 0)) log.add(t) {
+            it.copy(
+                lessons = it.lessons + if (firstDone) 1 else 0,
+                xp = it.xp + (if (firstDone && !cp) XP_LESSON else 0) + (if (firstMastered) XP_CHECKPOINT else 0),
+                newCards = it.newCards + fresh,
+            )
+        }
     }
 }
+
+private fun JsonObject.flag(k: String) = (this[k] as? JsonPrimitive)?.booleanOrNull == true
+private fun JsonObject.count(k: String) = (this[k] as? JsonPrimitive)?.intOrNull ?: 0

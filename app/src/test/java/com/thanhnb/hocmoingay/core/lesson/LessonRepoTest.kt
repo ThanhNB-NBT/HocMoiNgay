@@ -1,6 +1,11 @@
 package com.thanhnb.hocmoingay.core.lesson
 
+import kotlinx.serialization.json.jsonObject
+import com.thanhnb.hocmoingay.core.db.DailyLogEntity
 import com.thanhnb.hocmoingay.core.db.LessonEntity
+import com.thanhnb.hocmoingay.core.log.DailyLogRepo
+import com.thanhnb.hocmoingay.core.review.DAY_MS
+import java.time.ZoneOffset
 import com.thanhnb.hocmoingay.core.db.ProgressEntity
 import com.thanhnb.hocmoingay.core.db.ReviewCardEntity
 import com.thanhnb.hocmoingay.core.sync.ReviewCardIds
@@ -108,5 +113,75 @@ class LessonRepoTest {
         repo.setLanguage(id, "rust")
         assertTrue(progress.getValue(id).updatedAt > a)
         assertEquals("rust", progress.getValue(id).language)
+    }
+
+    private val pid = "luyen-code/de/hashing/tong-hai-so"
+    private val pbody = """{"title":"p","kind":"problem","cards":[{"key":"two_sum","type":"code","langs":["python"],"tests":[]}]}"""
+    private val logs = mutableMapOf<String, DailyLogEntity>()
+    private val log = DailyLogRepo({ logs[it] }, { logs[it.day] = it }, { it() }, { "u1" }, {}, zone = { ZoneOffset.UTC })
+    private val logged = LessonRepo(
+        lesson = {
+            when (it) {
+                id -> LessonEntity(id, "_sample-code", body = body)
+                pid -> LessonEntity(pid, "luyen-code", body = pbody)
+                else -> null
+            }
+        },
+        track = { "code" },
+        getProgress = { progress[it] }, putProgress = { progress[it.lessonId] = it },
+        cardsByIds = { ids -> ids.mapNotNull { cards[it] } }, putCards = { l -> l.forEach { cards[it.id] = it } },
+        tx = { it() }, userId = { "u1" }, afterWrite = {}, now = { clock }, log = log,
+    )
+
+    @Test fun xongLanDauCongHaiMuoiXpVaMotBaiHocLaiKhongCong() = runTest {
+        logged.finish(id, 80); logged.finish(id, 100)
+        val d = logs.getValue("1970-01-01")
+        assertEquals(20, d.xp)
+        assertEquals(1, d.lessons)
+        assertEquals(2, d.newCards)
+    }
+
+    @Test fun quaHaiMuoiTheMoiThiTheDuDenHanNgayMai() = runTest {
+        logs["1970-01-01"] = DailyLogEntity(day = "1970-01-01", userId = "u1", newCards = 19, updatedAt = 1)
+        logged.finish(id, 80)
+        assertEquals(listOf(clock, DAY_MS), cards.values.map { it.due }.sorted()) // thẻ thứ 2 sang 0 giờ hôm sau (UTC)
+        assertEquals(21, logs.getValue("1970-01-01").newCards)
+    }
+
+    @Test fun datLanDauKhongTruotTaoTheResolveDeVaCongMuoiXp() = runTest {
+        logged.recordSubmit(pid, "two_sum", "python", pass = true, hints = 0)
+        val c = cards.getValue(ReviewCardIds.of("u1", "$pid#two_sum"))
+        assertEquals("resolve", c.kind)
+        assertEquals("luyen-code", c.courseId)
+        assertEquals(clock + 8 * DAY_MS, c.due) // Dễ: 8 ngày (AppFsrs)
+        assertEquals(10, logs.getValue("1970-01-01").xp)
+        assertEquals(JsonPrimitive(true), cardStateOf(progress[pid])["two_sum"]?.jsonObject?.get("pass"))
+    }
+
+    @Test fun truotRoiDatThiNhoVaKhongCongXp() = runTest {
+        logged.recordSubmit(pid, "two_sum", "python", pass = false, hints = 0)
+        logged.recordSubmit(pid, "two_sum", "python", pass = true, hints = 0)
+        assertEquals(clock + 2 * DAY_MS, cards.values.single().due) // Nhớ: 2 ngày
+        assertEquals(0, logs["1970-01-01"]?.xp ?: 0)
+    }
+
+    @Test fun giaiLaiChamTheoLuotNayVaKhongSuaCardState() = runTest {
+        logged.recordSubmit(pid, "two_sum", "python", pass = true, hints = 0)
+        val st = progress.getValue(pid).cardState
+        logged.recordSubmit(pid, "two_sum", "python", pass = true, hints = 0) // nộp lại lượt thường: lịch giữ nguyên
+        assertEquals(1, cards.values.single().reps)
+        clock += 8 * DAY_MS
+        logged.recordSubmit(pid, "two_sum", "rust", pass = true, hints = 2, review = true, sessionFails = 0)
+        val c = cards.values.single()
+        assertEquals(2, c.reps)
+        assertEquals(clock, c.lastReview)
+        assertEquals(1, c.lapses) // 2 gợi ý → Quên khi thẻ đang Review
+        assertEquals(st, progress.getValue(pid).cardState)
+        assertEquals(10, logs.values.sumOf { it.xp })
+    }
+
+    @Test fun baiConceptKhongTaoTheResolve() = runTest {
+        logged.recordSubmit(id, "code1", "python", pass = true, hints = 0)
+        assertTrue(cards.isEmpty())
     }
 }
