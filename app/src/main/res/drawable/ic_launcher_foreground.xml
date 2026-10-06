@@ -1,9 +1,42 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Bong bóng thoại (tiếng Anh: nói) chứa dấu nhắc ">_" (lập trình). Khung 108dp, nội dung nằm trong vùng an toàn 66dp. -->
+<!-- Bình minh cắt giấy: mặt trời mọc sau bốn lớp đồi — mỗi ngày một bình minh, học đều như mặt trời mọc. Sinh bằng tools/gen_icon.py, sửa ở đó. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
-    <path android:fillColor="#12171B"
-        android:pathData="M40,30h28a10,10 0,0 1,10 10v18a10,10 0,0 1,-10 10h-20l-10,10v-10.5a10,10 0,0 1,-8 -9.5v-18a10,10 0,0 1,10 -10z" />
-    <path android:strokeColor="#F6CE00" android:strokeWidth="5" android:strokeLineCap="round" android:strokeLineJoin="round"
-        android:pathData="M41,42l7,7l-7,7M53,56h13" />
+    <group android:pivotX="54" android:pivotY="54" android:scaleX="0.8" android:scaleY="0.8">
+        <group android:translateY="1.6">
+            <path android:fillColor="#30000000" android:pathData="M54,30a18,18 0 1,0 0.01,0Z" />
+        </group>
+        <group android:translateY="0.8">
+            <path android:fillColor="#1A000000" android:pathData="M54,30a18,18 0 1,0 0.01,0Z" />
+        </group>
+        <path android:fillColor="#FFFFC93C" android:pathData="M54,30a18,18 0 1,0 0.01,0Z" />
+        <group android:translateY="-1.4">
+            <path android:fillColor="#26000000" android:pathData="M-30,62Q28,48 54,60T108,54T166,50V150H-30Z" />
+        </group>
+        <group android:translateY="-0.7">
+            <path android:fillColor="#1A000000" android:pathData="M-30,62Q28,48 54,60T108,54T166,50V150H-30Z" />
+        </group>
+        <path android:fillColor="#FFFF9466" android:pathData="M-30,62Q28,48 54,60T108,54T166,50V150H-30Z" />
+        <group android:translateY="-1.4">
+            <path android:fillColor="#26000000" android:pathData="M-30,72Q34,60 62,70T108,66T150,64V150H-30Z" />
+        </group>
+        <group android:translateY="-0.7">
+            <path android:fillColor="#1A000000" android:pathData="M-30,72Q34,60 62,70T108,66T150,64V150H-30Z" />
+        </group>
+        <path android:fillColor="#FFF5525E" android:pathData="M-30,72Q34,60 62,70T108,66T150,64V150H-30Z" />
+        <group android:translateY="-1.4">
+            <path android:fillColor="#26000000" android:pathData="M-30,82Q30,74 56,82T108,78T160,76V150H-30Z" />
+        </group>
+        <group android:translateY="-0.7">
+            <path android:fillColor="#1A000000" android:pathData="M-30,82Q30,74 56,82T108,78T160,76V150H-30Z" />
+        </group>
+        <path android:fillColor="#FFB83262" android:pathData="M-30,82Q30,74 56,82T108,78T160,76V150H-30Z" />
+        <group android:translateY="-1.4">
+            <path android:fillColor="#26000000" android:pathData="M-30,92Q36,86 62,92T108,90T150,90V150H-30Z" />
+        </group>
+        <group android:translateY="-0.7">
+            <path android:fillColor="#1A000000" android:pathData="M-30,92Q36,86 62,92T108,90T150,90V150H-30Z" />
+        </group>
+        <path android:fillColor="#FF6B1F5C" android:pathData="M-30,92Q36,86 62,92T108,90T150,90V150H-30Z" />
+    </group>
 </vector>

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Nền icon: vàng lê (Pear), khối màu chính của theme Hai sắc. -->
+<!-- Trời bình minh: vàng nhạt chuyển cam đào. Sinh bằng tools/gen_icon.py. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android">
-    <solid android:color="#F6CE00" />
+    <gradient android:angle="270" android:startColor="#FFFFF1C9" android:endColor="#FFFFD3A8" />
 </shape>
