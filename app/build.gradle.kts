@@ -14,10 +14,15 @@ plugins {
 val local = Properties().apply {
     rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use(::load)
 }
-// Môi trường dev: server Supabase local do server/dev-up.sh dựng, secret + tài khoản test ở server/.env.dev (gitignore)
+// Môi trường dev: server Supabase local do server/dev-up.sh (repo server riêng) dựng; secret + tài khoản test ở server/.env.dev.
+// Đường dẫn đặt trong local.properties: DEV_ENV_FILE=…/hoc_moi_ngay/server/.env.dev. Thiếu file thì bản dev không có key/tài khoản điền sẵn.
 val devEnv = Properties().apply {
-    rootProject.file("server/.env.dev").takeIf { it.exists() }?.inputStream()?.use(::load)
+    local.getProperty("DEV_ENV_FILE")?.let(::file)?.takeIf { it.exists() }?.inputStream()?.use(::load)
 }
+// Bản release: ANON_KEY ở local.properties (máy dev) hoặc biến môi trường SUPABASE_ANON_KEY (CI, từ GitHub Secrets)
+val anonKey: String = local.getProperty("ANON_KEY") ?: System.getenv("SUPABASE_ANON_KEY").orEmpty()
+// Ký phát hành: CI giải keystore từ secret ra file rồi đặt ANDROID_KEYSTORE_FILE/ANDROID_KEYSTORE_PASSWORD (alias "upload", như Novel_Persona)
+val keystoreFile: String? = System.getenv("ANDROID_KEYSTORE_FILE")
 fun javaStr(v: String) = "\"" + v.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
 fun com.android.build.api.dsl.ApplicationBuildType.useDevServer() {
     buildConfigField("String", "SUPABASE_URL", javaStr("http://10.0.2.2:8100")) // localhost của laptop nhìn từ emulator
@@ -36,16 +41,26 @@ android {
         applicationId = "com.thanhnb.hocmoingay"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
-        versionName = "0.1.0"
+        // CI phát hành truyền -PversionName=<tag bỏ v> -PversionCode=<số lần chạy>
+        versionCode = (findProperty("versionCode") as String?)?.toInt() ?: 1
+        versionName = (findProperty("versionName") as String?) ?: "0.1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "SUPABASE_URL", "\"https://hoc-api.120203.xyz\"")
-        buildConfigField("String", "SUPABASE_ANON_KEY", "\"${local.getProperty("ANON_KEY", "")}\"")
+        buildConfigField("String", "SUPABASE_ANON_KEY", javaStr(anonKey))
         // Production (release) luôn rỗng → không có nút điền tài khoản test
         buildConfigField("String", "DEV_EMAIL", "\"\"")
         buildConfigField("String", "DEV_PASSWORD", "\"\"")
         buildConfigField("boolean", "SHOW_SAMPLES", "false")
         manifestPlaceholders["cleartext"] = "false"
+    }
+
+    signingConfigs {
+        create("upload") {
+            keystoreFile?.let { storeFile = file(it) }
+            storePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
+            keyAlias = "upload"
+            keyPassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
+        }
     }
 
     buildTypes {
@@ -54,8 +69,8 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            // ponytail: ký bằng debug key để chạy thử bản R8 trên AVD; keystore thật khi phát hành
-            signingConfig = signingConfigs.getByName("debug")
+            // Máy dev: ký debug để chạy thử bản R8 trên AVD; CI phát hành: keystore thật
+            signingConfig = signingConfigs.getByName(if (keystoreFile != null) "upload" else "debug")
         }
         // Giống hệt release (R8 + shrink) nhưng trỏ server dev: kiểm R8/serializer mà không đụng production
         create("devRelease") {

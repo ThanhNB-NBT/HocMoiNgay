@@ -1,0 +1,24 @@
+# Kiểm mỗi PR / push main: unit test JVM + build release (R8, lintVital). Không cần secret:
+# thiếu SUPABASE_ANON_KEY thì APK vẫn build, chỉ không nối được server — đủ để bắt lỗi biên dịch/R8.
+name: CI
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  test-build:
+    name: Unit test + build release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: gradle/actions/setup-gradle@v6
+      - name: Unit test
+        run: ./gradlew --console=plain :app:testDebugUnitTest
+      - name: Build release (R8)
+        run: ./gradlew --console=plain :app:assembleRelease
