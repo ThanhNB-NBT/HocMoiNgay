@@ -1,5 +1,8 @@
 package com.thanhnb.hocmoingay.feature.editor
 
+import com.thanhnb.hocmoingay.core.db.CourseEntity
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.jsonObject
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.cancel
@@ -36,6 +39,7 @@ class EditorViewModelTest {
     private val progress = mutableMapOf<String, ProgressEntity>()
     private val draftMap = mutableMapOf<Triple<String, String, String>, String>()
     private val calls = mutableListOf<String>()
+    private var lastLesson: String? = null
     private var gate: CompletableDeferred<Unit>? = null
     private var submitResult = """{"compiled":true,"tests":[{"name":"a","pass":true,"time_ms":1,"hidden":false}],"time_ms":1}"""
 
@@ -46,6 +50,7 @@ class EditorViewModelTest {
     private val api = CodeApi { _, body ->
         val mode = body["mode"]!!.jsonPrimitive.content
         calls += mode
+        lastLesson = body["lesson_id"]?.jsonPrimitive?.content
         when (mode) {
             "starter" -> """{"code":"fn two_sum() {}"}"""
             "hint" -> """{"lines":["b","a"]}"""
@@ -148,5 +153,25 @@ class EditorViewModelTest {
         val v = vm(preferred = "rust", review = true); advanceUntilIdle()
         assertEquals(0, v.ui.value.hints)
         assertEquals("rust", v.ui.value.lang)
+    }
+
+    @Test fun baiKiemGoiServerBangBaiGocVaGhiVaoHangBaiKiem() = runTest(d) {
+        val cp = "_sample-code/nhap-mon/mau#checkpoint"
+        val outline = """[{"level":"nhap-mon","title":"N","chapters":[{"id":"mau","title":"Mẫu","lessons":[{"id":"$id","title":"p","status":"ready"}]}]}]"""
+        val v = EditorViewModel(
+            cp, "bai-problem.two_sum",
+            LessonRepo(
+                lesson = { if (it == id) LessonEntity(id, "_sample-code", body = body) else null }, track = { "code" },
+                getProgress = { progress[it] }, putProgress = { progress[it.lessonId] = it },
+                cardsByIds = { emptyList() }, putCards = {}, tx = { it() }, userId = { "u1" }, afterWrite = {}, cpu = d,
+                course = { CourseEntity("_sample-code", "code", "S", outline = outline) },
+            ),
+            drafts, api, MutableStateFlow(true), flowOf("python"), flushScope = this,
+        )
+        advanceUntilIdle()
+        assertEquals(0, v.ui.value.maxHints) // bài kiểm không có gợi ý
+        v.submit(); advanceUntilIdle()
+        assertEquals(id, lastLesson)
+        assertEquals(JsonPrimitive(true), cardStateOf(progress[cp])["bai-problem.two_sum"]?.jsonObject?.get("pass"))
     }
 }

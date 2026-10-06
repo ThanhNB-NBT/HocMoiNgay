@@ -1,5 +1,8 @@
 package com.thanhnb.hocmoingay.core.lesson
 
+import java.time.Instant
+import java.time.ZoneId
+import com.thanhnb.hocmoingay.core.log.XP_CHECKPOINT
 import com.thanhnb.hocmoingay.core.review.reviewed
 import com.thanhnb.hocmoingay.core.review.resolveRating
 import com.thanhnb.hocmoingay.core.log.XP_CODE_FIRST_TRY
@@ -49,9 +52,23 @@ class LessonRepo(
     data class Loaded(val entity: LessonEntity, val body: LessonBody, val track: String = "code")
 
     suspend fun load(lessonId: String): Loaded? {
+        if (isCheckpoint(lessonId)) return loadCheckpoint(lessonId)
         val e = lesson(lessonId) ?: return null
         val b = withContext(cpu) { parseLesson(e.body) } ?: return null
         return Loaded(e, b, track(e.courseId) ?: "code")
+    }
+
+    /** Bài kiểm ảo: dựng từ các bài của chương trong Room, hạt giống "chương + ngày". */
+    private suspend fun loadCheckpoint(id: String): Loaded? {
+        val parts = chapterOf(id).split('/')
+        if (parts.size != 3) return null
+        val (courseId, level, chapterId) = parts
+        val c = course(courseId) ?: return null
+        val ch = parseOutline(c.outline).firstOrNull { it.level == level }?.chapters?.firstOrNull { it.id == chapterId } ?: return null
+        val lessons = ch.lessons.mapNotNull { o -> lesson(o.id)?.let { o.id to it.body } }
+        val day = Instant.ofEpochMilli(now()).atZone(ZoneId.systemDefault()).toLocalDate().toEpochDay()
+        val body = withContext(cpu) { buildCheckpoint(ch.title, lessons, "${chapterOf(id)}#$day".hashCode()) } ?: return null
+        return Loaded(LessonEntity(id, courseId, body = "{}"), body, c.track)
     }
 
     private suspend fun edit(lessonId: String, change: (ProgressEntity) -> ProgressEntity) {
@@ -143,15 +160,19 @@ class LessonRepo(
         val trackName = l.track
         val t = now()
         var firstDone = false
+        val cp = isCheckpoint(lessonId)
+        var firstMastered = false
         edit(lessonId) { p ->
             val best = maxOf(p.score ?: 0, score)
             if (l.body.codePending(cardStateOf(p))) p.copy(score = best)
             else {
                 firstDone = p.status != "done"
+                firstMastered = cp && best >= MASTERED && (p.score ?: 0) < MASTERED
                 p.copy(status = "done", score = best, completedAt = p.completedAt ?: t)
             }
         }
-        val refs = l.body.cards.filter { it.review }.map { "$lessonId#${it.key}" } + l.body.review.map { "$lessonId#${it.key}" }
+        // bài kiểm dùng lại card của chương: thẻ ôn đã có từ bài gốc
+        val refs = if (cp) emptyList() else l.body.cards.filter { it.review }.map { "$lessonId#${it.key}" } + l.body.review.map { "$lessonId#${it.key}" }
         val usedToday = log?.day(t)?.newCards ?: 0
         var fresh = 0
         tx {
@@ -168,10 +189,10 @@ class LessonRepo(
             if (add.isNotEmpty()) putCards(add)
         }
         afterWrite()
-        if (log != null && (firstDone || fresh > 0)) log.add(t) {
+        if (log != null && (firstDone || firstMastered || fresh > 0)) log.add(t) {
             it.copy(
                 lessons = it.lessons + if (firstDone) 1 else 0,
-                xp = it.xp + if (firstDone) XP_LESSON else 0,
+                xp = it.xp + (if (firstDone && !cp) XP_LESSON else 0) + (if (firstMastered) XP_CHECKPOINT else 0),
                 newCards = it.newCards + fresh,
             )
         }
