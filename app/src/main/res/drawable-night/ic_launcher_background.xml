@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Trời đêm: xanh than chuyển tím. Sinh bằng tools/gen_icon.py. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <gradient android:angle="270" android:startColor="#FF1C1E4A" android:endColor="#FF3B2C6E" />
+</shape>
