@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Icon theo màu hệ thống (Android 13+): chỉ dùng kênh alpha, nên vẽ viền bong bóng thay cho khối đặc. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+    <path android:strokeColor="#FF000000" android:strokeWidth="4" android:strokeLineJoin="round"
+        android:pathData="M40,30h28a10,10 0,0 1,10 10v18a10,10 0,0 1,-10 10h-20l-10,10v-10.5a10,10 0,0 1,-8 -9.5v-18a10,10 0,0 1,10 -10z" />
+    <path android:strokeColor="#FF000000" android:strokeWidth="5" android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:pathData="M41,42l7,7l-7,7M53,56h13" />
+</vector>

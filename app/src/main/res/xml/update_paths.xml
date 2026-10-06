@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- APK bản mới tải vào cacheDir/updates, chia cho trình cài hệ thống qua FileProvider. -->
+<paths>
+    <cache-path name="updates" path="updates/" />
+</paths>

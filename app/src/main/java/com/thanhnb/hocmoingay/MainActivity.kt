@@ -21,6 +21,7 @@ import com.thanhnb.hocmoingay.core.auth.LoginScreen
 import com.thanhnb.hocmoingay.core.auth.LoginViewModel
 import com.thanhnb.hocmoingay.core.theme.HocTheme
 import com.thanhnb.hocmoingay.core.theme.isDark
+import com.thanhnb.hocmoingay.core.update.AutoUpdatePrompt
 import io.github.jan.supabase.auth.auth
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -61,6 +62,7 @@ class MainActivity : ComponentActivity() {
                         AuthState.SignedOut -> LoginScreen(viewModel { LoginViewModel(g.supabase.auth) })
                         is AuthState.SignedIn -> AppNav(g)
                     }
+                    AutoUpdatePrompt()
                 }
             }
         }

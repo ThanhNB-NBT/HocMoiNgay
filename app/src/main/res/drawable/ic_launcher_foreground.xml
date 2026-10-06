@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Bong bóng thoại (tiếng Anh: nói) chứa dấu nhắc ">_" (lập trình). Khung 108dp, nội dung nằm trong vùng an toàn 66dp. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+    <path android:fillColor="#12171B"
+        android:pathData="M40,30h28a10,10 0,0 1,10 10v18a10,10 0,0 1,-10 10h-20l-10,10v-10.5a10,10 0,0 1,-8 -9.5v-18a10,10 0,0 1,10 -10z" />
+    <path android:strokeColor="#F6CE00" android:strokeWidth="5" android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:pathData="M41,42l7,7l-7,7M53,56h13" />
+</vector>

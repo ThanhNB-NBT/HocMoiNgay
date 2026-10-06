@@ -51,6 +51,7 @@ import androidx.lifecycle.viewModelScope
 import com.thanhnb.hocmoingay.core.theme.ThemeMode
 import com.thanhnb.hocmoingay.core.theme.ThemeStyle
 import com.thanhnb.hocmoingay.core.ui.PushButton
+import com.thanhnb.hocmoingay.core.update.UpdateCheck
 import com.thanhnb.hocmoingay.core.ui.Pushable
 import com.thanhnb.hocmoingay.feature.Placeholder
 import kotlinx.coroutines.flow.SharingStarted
@@ -145,6 +146,7 @@ fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit, onPlacement: () ->
                 Hint(s.englishLevel?.let { "Trình độ hiện tại: $it." } ?: "Bạn chưa làm bài xếp lớp.")
                 PushButton(if (s.englishLevel == null) "Làm bài xếp lớp" else "Làm lại bài xếp lớp", onPlacement, Modifier.fillMaxWidth())
             }
+            Section("Phiên bản") { UpdateCheck() }
             Spacer(Modifier.height(24.dp))
         }
     }
