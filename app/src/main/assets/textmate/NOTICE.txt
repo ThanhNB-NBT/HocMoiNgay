@@ -1,3 +1,23 @@
-Nguồn grammar TextMate trong thư mục này
-- python, javascript, typescript, java, go, cpp/c, rust, csharp, sql, shell: microsoft/vscode (extensions/*), MIT — xem LICENSE-vscode.txt. language-configuration.json đã bỏ comment/dấu phẩy thừa (JSONC -> JSON).
-- kotlin: Rosemoe/sora-editor (app/src/main/assets/textmate/kotlin), repo giấy phép LGPL-2.1 — cùng giấy phép với thư viện Sora app đang dùng.
+Nguồn grammar TextMate trong thư mục này (bản quyền thuộc tác giả gốc; giấy phép đầy đủ ở licenses/).
+
+Các grammar lấy qua microsoft/vscode (extensions/*), bản quyền Microsoft Corporation, MIT — LICENSE-vscode.txt.
+VS Code chuyển đổi từ các repo gốc dưới đây; giấy phép gốc đi kèm:
+
+| Thư mục     | Repo gốc                                   | Giấy phép | File giấy phép                                  |
+|-------------|--------------------------------------------|-----------|-------------------------------------------------|
+| python      | github.com/MagicStack/MagicPython          | MIT       | licenses/MagicStack_MagicPython.txt             |
+| cpp (C)     | github.com/jeff-hykin/better-c-syntax      | MIT       | licenses/jeff-hykin_better-c-syntax.txt         |
+| cpp (C++)   | github.com/jeff-hykin/better-cpp-syntax    | MIT       | licenses/jeff-hykin_better-cpp-syntax.txt       |
+| shell       | github.com/jeff-hykin/better-shell-syntax  | MIT       | licenses/jeff-hykin_better-shell-syntax.txt     |
+| csharp      | github.com/dotnet/csharp-tmLanguage        | MIT       | licenses/dotnet_csharp-tmLanguage.txt           |
+| go          | github.com/worlpaker/go-syntax             | MIT       | licenses/worlpaker_go-syntax.txt                |
+| javascript, typescript | github.com/microsoft/TypeScript-TmLanguage | MIT | licenses/microsoft_TypeScript-TmLanguage.txt |
+| rust        | github.com/dustypomerleau/rust-syntax      | MIT       | licenses/dustypomerleau_rust-syntax.txt         |
+| sql         | github.com/microsoft/vscode-mssql          | MIT       | licenses/microsoft_vscode-mssql.txt             |
+| java        | github.com/redhat-developer/vscode-java    | EPL-2.0   | licenses/redhat-developer_vscode-java.txt       |
+
+Grammar kotlin lấy từ github.com/Rosemoe/sora-editor (thư mục assets/textmate/kotlin của repo đó), LGPL-2.1 —
+licenses/Rosemoe_sora-editor.txt. Đây cũng là giấy phép của thư viện Sora Editor mà app dùng.
+
+Thay đổi duy nhất app tự làm: language-configuration.json bỏ comment và dấu phẩy thừa (JSONC -> JSON).
+Nội dung grammar giữ nguyên; mã nguồn gốc lấy được ở các repo trên (điều kiện của EPL-2.0 và LGPL-2.1).
