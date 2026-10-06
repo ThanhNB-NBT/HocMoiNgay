@@ -1,5 +1,9 @@
 package com.thanhnb.hocmoingay.core.lesson
 
+import com.thanhnb.hocmoingay.core.review.reviewed
+import com.thanhnb.hocmoingay.core.review.resolveRating
+import com.thanhnb.hocmoingay.core.log.XP_CODE_FIRST_TRY
+import kotlinx.serialization.json.intOrNull
 import com.thanhnb.hocmoingay.core.db.CourseEntity
 import com.thanhnb.hocmoingay.core.log.DailyLogRepo
 import com.thanhnb.hocmoingay.core.log.NEW_CARDS_PER_DAY
@@ -82,6 +86,53 @@ class LessonRepo(
     suspend fun useHint(lessonId: String, level: Int) = edit(lessonId) { it.copy(hintsUsed = maxOf(it.hintsUsed, level)) }
 
     /**
+     * Một lần nộp code (thay khối ghi card_state trước đây nằm trong EditorViewModel).
+     * - Lượt thường: đạt → pass/lang/hints; trượt trước lần đạt đầu → fails + 1 (Quyết định 7 của d).
+     * - Đạt lần đầu với 0 lần trượt: +10 XP.
+     * - Bài `problem`: chưa có thẻ `resolve` thì tạo và chấm ngay theo (gợi ý, fails). Lượt giải lại ([review])
+     *   chấm thẻ đó theo gợi ý và [sessionFails] của chính lượt này, không sửa card_state, không cộng XP.
+     */
+    suspend fun recordSubmit(
+        lessonId: String, key: String, lang: String, pass: Boolean, hints: Int,
+        review: Boolean = false, sessionFails: Int = 0,
+    ) {
+        val uid = userId() ?: return
+        val before = cardState(lessonId, key)
+        if (!review) updateCard(lessonId, key) { s ->
+            JsonObject(
+                s + when {
+                    pass -> mapOf("pass" to JsonPrimitive(true), "lang" to JsonPrimitive(lang), "hints" to JsonPrimitive(hints))
+                    s.flag("pass") -> emptyMap() // đã đạt rồi: fails chỉ đếm trượt trước lần đạt đầu
+                    else -> mapOf("fails" to JsonPrimitive(s.count("fails") + 1))
+                },
+            )
+        }
+        if (!pass) return
+        val t = now()
+        val fails = before.count("fails")
+        if (!review && !before.flag("pass") && fails == 0) log?.add(t) { it.copy(xp = it.xp + XP_CODE_FIRST_TRY) }
+        val l = load(lessonId) ?: return
+        if (l.body.kind != "problem") return
+        val ref = "$lessonId#$key"
+        val cardId = ReviewCardIds.of(uid, ref)
+        var wrote = false
+        tx {
+            val raw = cardsByIds(listOf(cardId)).firstOrNull()
+            val old = raw?.takeUnless { it.deleted }
+            if (old != null && !review) return@tx // nộp lại ngoài lượt ôn: lịch giữ nguyên
+            val base = old ?: ReviewCardEntity(
+                id = cardId, userId = uid, ref = ref, kind = "resolve", track = l.track, courseId = l.entity.courseId,
+                due = t, updatedAt = 0,
+            )
+            val r = if (review) resolveRating(hints, sessionFails) else resolveRating(hints, fails)
+            // đọc updatedAt cả của hàng đã xoá để bản mới thắng LWW (minor 1 của c)
+            putCards(listOf(base.reviewed(r, t).copy(updatedAt = nextUpdatedAt(raw?.updatedAt, t), dirty = true, deleted = false)))
+            wrote = true
+        }
+        if (wrote) afterWrite()
+    }
+
+    /**
      * Xong bài: `done`, điểm cao nhất, và thẻ recall (New) cho card `review: true` và ghi chú `review` chưa có thẻ.
      * Quá [NEW_CARDS_PER_DAY] thẻ mới trong ngày thì thẻ dư hẹn từ 0 giờ hôm sau (spec §7.4).
      * Lần đầu thành `done`: `lessons` + 1, +20 XP.
@@ -126,3 +177,6 @@ class LessonRepo(
         }
     }
 }
+
+private fun JsonObject.flag(k: String) = (this[k] as? JsonPrimitive)?.booleanOrNull == true
+private fun JsonObject.count(k: String) = (this[k] as? JsonPrimitive)?.intOrNull ?: 0

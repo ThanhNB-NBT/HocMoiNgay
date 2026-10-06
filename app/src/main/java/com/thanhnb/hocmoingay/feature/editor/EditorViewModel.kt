@@ -58,8 +58,10 @@ class EditorViewModel(
     val online: StateFlow<Boolean>,
     private val preferred: Flow<String>,
     private val flushScope: CoroutineScope,              // graph.scope: nháp cuối vẫn được ghi sau khi màn đóng
+    private val review: Boolean = false,                 // giải lại thẻ resolve từ Hôm nay: gợi ý tính lại từ 0, ngôn ngữ ưa thích
     private val now: () -> Long = System::currentTimeMillis,
 ) : ViewModel() {
+    private var sessionFails = 0
     private val _ui = MutableStateFlow(EditorUi())
     val ui = _ui.asStateFlow()
     private val pending = MutableStateFlow<CodeDraftEntity?>(null)
@@ -72,10 +74,10 @@ class EditorViewModel(
             val card = l?.body?.cards?.firstOrNull { it.key == cardKey } as? CodeTask
             if (card == null || card.langs.isEmpty()) { _ui.update { it.copy(missing = true) }; return@launch }
             val st = repo.cardState(lessonId, cardKey)
-            _ui.update { it.copy(body = l.body, card = card, hints = st.int("hints")) }
+            _ui.update { it.copy(body = l.body, card = card, hints = if (review) 0 else st.int("hints")) }
             val saved = repo.language(lessonId)
             val pref = preferred.first()
-            pick(listOf(saved, pref).firstOrNull { it != null && it in card.langs } ?: card.langs.first())
+            pick(listOf(if (review) null else saved, pref).firstOrNull { it != null && it in card.langs } ?: card.langs.first())
         }
     }
 
@@ -123,13 +125,8 @@ class EditorViewModel(
         when (val r = api.submit(lessonId, cardKey, lang, code, _ui.value.hints)) {
             is ApiResult.Ok -> {
                 val pass = r.value.allPass
-                repo.updateCard(lessonId, cardKey) { s ->
-                    JsonObject(
-                        s + if (pass) mapOf("pass" to JsonPrimitive(true), "lang" to JsonPrimitive(lang), "hints" to JsonPrimitive(_ui.value.hints))
-                        else if ((s["pass"] as? JsonPrimitive)?.booleanOrNull == true) emptyMap() // đã đạt rồi: fails chỉ đếm trượt trước lần đạt đầu
-                        else mapOf("fails" to JsonPrimitive(s.int("fails") + 1)),
-                    )
-                }
+                repo.recordSubmit(lessonId, cardKey, lang, pass, _ui.value.hints, review, sessionFails)
+                if (!pass) sessionFails++
                 Outcome.Submitted(r.value)
             }
             is ApiResult.Err -> Outcome.Failed(r.message)
@@ -161,8 +158,10 @@ class EditorViewModel(
         val level = s.hints + 1
         _ui.update { it.copy(hints = level) }
         viewModelScope.launch {
-            repo.useHint(lessonId, level)
-            repo.updateCard(lessonId, cardKey) { JsonObject(it + ("hints" to JsonPrimitive(level))) }
+            if (!review) { // lượt ôn không ghi đè số gợi ý của lần giải đầu
+                repo.useHint(lessonId, level)
+                repo.updateCard(lessonId, cardKey) { JsonObject(it + ("hints" to JsonPrimitive(level))) }
+            }
             if (level == s.maxHints) loadHintLines(cacheOnly = false)
         }
     }

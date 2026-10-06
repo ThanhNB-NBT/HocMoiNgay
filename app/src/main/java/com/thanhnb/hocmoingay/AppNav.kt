@@ -196,7 +196,7 @@ fun AppNav(graph: AppGraph) {
                                 viewModel {
                                     EditorViewModel(
                                         k.lessonId, k.cardKey, graph.lessons, graph.db.drafts(), graph.code, graph.net.online,
-                                        graph.settings.settings.map { it.preferredLanguage }, graph.scope,
+                                        graph.settings.settings.map { it.preferredLanguage }, graph.scope, review = k.review,
                                     )
                                 },
                                 onBack = { backStack.removeLastOrNull() },

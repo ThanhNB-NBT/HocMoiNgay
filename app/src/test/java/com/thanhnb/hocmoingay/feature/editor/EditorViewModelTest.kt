@@ -53,14 +53,14 @@ class EditorViewModelTest {
         }
     }
 
-    private fun TestScope.vm(preferred: String = "rust") = EditorViewModel(
+    private fun TestScope.vm(preferred: String = "rust", review: Boolean = false) = EditorViewModel(
         id, "two_sum",
         LessonRepo(
             lesson = { LessonEntity(id, "_sample-code", body = body) }, track = { "code" },
             getProgress = { progress[it] }, putProgress = { progress[it.lessonId] = it },
             cardsByIds = { emptyList() }, putCards = {}, tx = { it() }, userId = { "u1" }, afterWrite = {}, cpu = d,
         ),
-        drafts, api, MutableStateFlow(true), flowOf(preferred), flushScope = this,
+        drafts, api, MutableStateFlow(true), flowOf(preferred), flushScope = this, review = review,
     )
 
     @Before fun setUp() = Dispatchers.setMain(d)
@@ -138,5 +138,15 @@ class EditorViewModelTest {
         v.submit(); advanceUntilIdle() // học lại, nộp trượt
         assertEquals(null, state()["fails"])
         assertEquals("true", state()["pass"]!!.jsonPrimitive.content)
+    }
+
+    @Test fun giaiLaiBatDauKhongGoiYVaNgonNguUaThich() = runTest(d) {
+        progress[id] = ProgressEntity(
+            lessonId = id, userId = "u1", status = "done", language = "python",
+            cardState = """{"two_sum":{"pass":true,"hints":2}}""", updatedAt = 1,
+        )
+        val v = vm(preferred = "rust", review = true); advanceUntilIdle()
+        assertEquals(0, v.ui.value.hints)
+        assertEquals("rust", v.ui.value.lang)
     }
 }

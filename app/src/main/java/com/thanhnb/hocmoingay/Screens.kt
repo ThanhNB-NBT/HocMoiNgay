@@ -12,7 +12,8 @@ import kotlinx.serialization.Serializable
 @Serializable data object Placement : Screen
 @Serializable data class CourseDetail(val courseId: String) : Screen
 @Serializable data class LessonPlayer(val lessonId: String) : Screen
-@Serializable data class CodeEditor(val lessonId: String, val cardKey: String) : Screen
+/** [review]: giải lại thẻ `resolve` từ Hôm nay — gợi ý tính lại từ 0, ngôn ngữ ưa thích. */
+@Serializable data class CodeEditor(val lessonId: String, val cardKey: String, val review: Boolean = false) : Screen
 
 val TABS: List<NavKey> = listOf(Today, Learn, Review, Profile)
 
