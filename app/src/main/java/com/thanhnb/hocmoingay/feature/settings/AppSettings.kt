@@ -16,7 +16,7 @@ data class AppSettings(
     val mode: ThemeMode = ThemeMode.SYSTEM,
     @SerialName("daily_minutes") val dailyMinutes: Int = 20,
     /** "HH:mm", tăng dần, không trùng (giai đoạn e đặt lịch nhắc theo danh sách này). */
-    val reminders: List<String> = listOf("20:00"),
+    val reminders: List<String> = listOf("20:30"),
     @SerialName("preferred_language") val preferredLanguage: String = "python",
     @SerialName("english_level") val englishLevel: String? = null,
     @SerialName("active_courses") val activeCourses: List<String> = emptyList(),

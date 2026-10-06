@@ -1,5 +1,8 @@
 package com.thanhnb.hocmoingay
 
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.distinctUntilChanged
+import com.thanhnb.hocmoingay.feature.reminder.Reminders
 import android.app.Application
 import androidx.work.WorkManager
 import com.thanhnb.hocmoingay.core.auth.AuthRepo
@@ -84,4 +87,10 @@ class AppGraph(app: Application) {
         }
     }
     val assets = Assets(File(app.cacheDir, "assets")) { supabase.storage.from("content").downloadAuthenticated(it) }
+    val reminders = Reminders(WorkManager.getInstance(app))
+
+    init {
+        // Giờ nhắc theo Cài đặt (spec §7.4): mở app và mỗi lần đổi giờ thì khớp lại lịch
+        scope.launch { settings.settings.map { it.reminders }.distinctUntilChanged().collect { reminders.sync(it) } }
+    }
 }

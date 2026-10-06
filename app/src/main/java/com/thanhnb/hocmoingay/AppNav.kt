@@ -1,5 +1,6 @@
 package com.thanhnb.hocmoingay
 
+import com.thanhnb.hocmoingay.feature.reminder.NotifyCard
 import com.thanhnb.hocmoingay.feature.profile.ProfileViewModel
 import com.thanhnb.hocmoingay.feature.today.TodayViewModel
 import androidx.compose.animation.SharedTransitionLayout
@@ -152,6 +153,7 @@ fun AppNav(graph: AppGraph) {
                     entryDecorators = listOf(rememberSaveableStateHolderNavEntryDecorator(), rememberViewModelStoreNavEntryDecorator()),
                     entryProvider = entryProvider {
                         entry<Today> {
+                            val s by graph.settings.settings.collectAsStateWithLifecycle(AppSettings())
                             TodayScreen(
                                 viewModel {
                                     TodayViewModel(
@@ -164,6 +166,7 @@ fun AppNav(graph: AppGraph) {
                                 onOpenLesson = { backStack.add(LessonPlayer(it)) },
                                 onResolve = { l, k -> backStack.add(CodeEditor(l, k, review = true)) },
                                 onPlacement = { backStack.add(Placement) },
+                                notify = { NotifyCard(s.reminders) },
                             )
                         }
                         entry<Learn> {
