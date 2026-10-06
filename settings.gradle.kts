@@ -14,3 +14,4 @@ dependencyResolutionManagement {
 }
 rootProject.name = "HocMoiNgay"
 include(":app")
+include(":baselineprofile")
