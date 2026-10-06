@@ -1,6 +1,10 @@
 package com.thanhnb.hocmoingay.core.lesson
 
+import com.thanhnb.hocmoingay.core.db.DailyLogEntity
 import com.thanhnb.hocmoingay.core.db.LessonEntity
+import com.thanhnb.hocmoingay.core.log.DailyLogRepo
+import com.thanhnb.hocmoingay.core.review.DAY_MS
+import java.time.ZoneOffset
 import com.thanhnb.hocmoingay.core.db.ProgressEntity
 import com.thanhnb.hocmoingay.core.db.ReviewCardEntity
 import com.thanhnb.hocmoingay.core.sync.ReviewCardIds
@@ -108,5 +112,29 @@ class LessonRepoTest {
         repo.setLanguage(id, "rust")
         assertTrue(progress.getValue(id).updatedAt > a)
         assertEquals("rust", progress.getValue(id).language)
+    }
+
+    private val logs = mutableMapOf<String, DailyLogEntity>()
+    private val log = DailyLogRepo({ logs[it] }, { logs[it.day] = it }, { it() }, { "u1" }, {}, zone = { ZoneOffset.UTC })
+    private val logged = LessonRepo(
+        lesson = { if (it == id) LessonEntity(id, "_sample-code", body = body) else null }, track = { "code" },
+        getProgress = { progress[it] }, putProgress = { progress[it.lessonId] = it },
+        cardsByIds = { ids -> ids.mapNotNull { cards[it] } }, putCards = { l -> l.forEach { cards[it.id] = it } },
+        tx = { it() }, userId = { "u1" }, afterWrite = {}, now = { clock }, log = log,
+    )
+
+    @Test fun xongLanDauCongHaiMuoiXpVaMotBaiHocLaiKhongCong() = runTest {
+        logged.finish(id, 80); logged.finish(id, 100)
+        val d = logs.getValue("1970-01-01")
+        assertEquals(20, d.xp)
+        assertEquals(1, d.lessons)
+        assertEquals(2, d.newCards)
+    }
+
+    @Test fun quaHaiMuoiTheMoiThiTheDuDenHanNgayMai() = runTest {
+        logs["1970-01-01"] = DailyLogEntity(day = "1970-01-01", userId = "u1", newCards = 19, updatedAt = 1)
+        logged.finish(id, 80)
+        assertEquals(listOf(clock, DAY_MS), cards.values.map { it.due }.sorted()) // thẻ thứ 2 sang 0 giờ hôm sau (UTC)
+        assertEquals(21, logs.getValue("1970-01-01").newCards)
     }
 }

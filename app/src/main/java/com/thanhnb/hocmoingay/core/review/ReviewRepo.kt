@@ -1,5 +1,6 @@
 package com.thanhnb.hocmoingay.core.review
 
+import com.thanhnb.hocmoingay.core.log.XP_REVIEW
 import com.thanhnb.hocmoingay.core.db.ReviewCardEntity
 import com.thanhnb.hocmoingay.core.log.DailyLogRepo
 import com.thanhnb.hocmoingay.core.sync.nextUpdatedAt
@@ -56,6 +57,6 @@ class ReviewRepo(
         }
         if (!wrote) return
         afterWrite()
-        log.add(t) { it.copy(reviews = it.reviews + 1) }
+        log.add(t) { it.copy(reviews = it.reviews + 1, xp = it.xp + XP_REVIEW) }
     }
 }

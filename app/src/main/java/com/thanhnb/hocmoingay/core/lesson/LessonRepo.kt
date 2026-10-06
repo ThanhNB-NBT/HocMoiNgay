@@ -1,5 +1,9 @@
 package com.thanhnb.hocmoingay.core.lesson
 
+import com.thanhnb.hocmoingay.core.db.CourseEntity
+import com.thanhnb.hocmoingay.core.log.DailyLogRepo
+import com.thanhnb.hocmoingay.core.log.NEW_CARDS_PER_DAY
+import com.thanhnb.hocmoingay.core.log.XP_LESSON
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.JsonPrimitive
 import com.thanhnb.hocmoingay.core.db.LessonEntity
@@ -35,6 +39,8 @@ class LessonRepo(
     private val afterWrite: () -> Unit,
     private val now: () -> Long = System::currentTimeMillis,
     private val cpu: CoroutineDispatcher = Dispatchers.Default, // test truyền dispatcher của runTest
+    private val log: DailyLogRepo? = null,                      // null ở test cũ: không ghi XP/thẻ mới
+    private val course: suspend (String) -> CourseEntity? = { null }, // đề cương để dựng bài kiểm cuối chương
 ) {
     data class Loaded(val entity: LessonEntity, val body: LessonBody, val track: String = "code")
 
@@ -75,29 +81,48 @@ class LessonRepo(
     /** Số nấc gợi ý đã mở (chỉ tăng); d dùng để chấm thẻ resolve. */
     suspend fun useHint(lessonId: String, level: Int) = edit(lessonId) { it.copy(hintsUsed = maxOf(it.hintsUsed, level)) }
 
-    /** Xong bài: `done`, điểm cao nhất, và thẻ recall (New, đến hạn ngay) cho card `review: true` và ghi chú `review` chưa có thẻ. */
+    /**
+     * Xong bài: `done`, điểm cao nhất, và thẻ recall (New) cho card `review: true` và ghi chú `review` chưa có thẻ.
+     * Quá [NEW_CARDS_PER_DAY] thẻ mới trong ngày thì thẻ dư hẹn từ 0 giờ hôm sau (spec §7.4).
+     * Lần đầu thành `done`: `lessons` + 1, +20 XP.
+     */
     suspend fun finish(lessonId: String, score: Int) {
         val uid = userId() ?: return
         val l = load(lessonId) ?: return
         val trackName = l.track
         val t = now()
+        var firstDone = false
         edit(lessonId) { p ->
             val best = maxOf(p.score ?: 0, score)
             if (l.body.codePending(cardStateOf(p))) p.copy(score = best)
-            else p.copy(status = "done", score = best, completedAt = p.completedAt ?: t)
+            else {
+                firstDone = p.status != "done"
+                p.copy(status = "done", score = best, completedAt = p.completedAt ?: t)
+            }
         }
         val refs = l.body.cards.filter { it.review }.map { "$lessonId#${it.key}" } + l.body.review.map { "$lessonId#${it.key}" }
+        val usedToday = log?.day(t)?.newCards ?: 0
+        var fresh = 0
         tx {
             val ids = refs.associateBy { ReviewCardIds.of(uid, it) }
             val have = cardsByIds(ids.keys.toList()).filterNot { it.deleted }.map { it.id }.toSet()
-            val fresh = ids.filterKeys { it !in have }.map { (id, ref) ->
+            val add = ids.filterKeys { it !in have }.entries.mapIndexed { i, (id, ref) ->
+                val due = if (log == null || usedToday + i < NEW_CARDS_PER_DAY) t else log.nextDayStart(t)
                 ReviewCardEntity(
                     id = id, userId = uid, ref = ref, kind = "recall", track = trackName, courseId = l.entity.courseId,
-                    due = t, updatedAt = nextUpdatedAt(null, t), dirty = true,
+                    due = due, updatedAt = nextUpdatedAt(null, t), dirty = true,
                 )
             }
-            if (fresh.isNotEmpty()) putCards(fresh)
+            fresh = add.size
+            if (add.isNotEmpty()) putCards(add)
         }
         afterWrite()
+        if (log != null && (firstDone || fresh > 0)) log.add(t) {
+            it.copy(
+                lessons = it.lessons + if (firstDone) 1 else 0,
+                xp = it.xp + if (firstDone) XP_LESSON else 0,
+                newCards = it.newCards + fresh,
+            )
+        }
     }
 }

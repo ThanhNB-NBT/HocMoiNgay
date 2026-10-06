@@ -53,6 +53,9 @@ class AppGraph(app: Application) {
             observePulled = db.syncState().observeCursor("settings").map { it != null },
         )
     }
+    val log = db.learner().let { l ->
+        DailyLogRepo({ l.dailyLogByKeys(listOf(it)).firstOrNull() }, { l.upsertDailyLog(listOf(it)) }, dbTx(db), auth::currentUserId, scheduler::afterWrite)
+    }
     val lessons = LessonRepo(
         lesson = db.curriculum()::lesson,
         track = { db.curriculum().course(it)?.track },
@@ -63,10 +66,9 @@ class AppGraph(app: Application) {
         tx = dbTx(db),
         userId = auth::currentUserId,
         afterWrite = scheduler::afterWrite,
+        log = log,
+        course = db.curriculum()::course,
     )
-    val log = db.learner().let { l ->
-        DailyLogRepo({ l.dailyLogByKeys(listOf(it)).firstOrNull() }, { l.upsertDailyLog(listOf(it)) }, dbTx(db), auth::currentUserId, scheduler::afterWrite)
-    }
     val reviews = db.learner().let { l ->
         ReviewRepo(l::dueRecall, l::reviewCardsByKeys, { l.upsertReviewCards(listOf(it)) }, log, dbTx(db), scheduler::afterWrite)
     }

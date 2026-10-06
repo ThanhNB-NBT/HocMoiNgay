@@ -61,11 +61,13 @@ class PlayerStrandsTest {
         assertEquals(5.0, s.getValue("input").jsonPrimitive.double, 1e-9)
     }
 
-    @Test fun baiLapTrinhKhongGhiMach() = runTest(d) {
+    @Test fun baiLapTrinhKhongGhiMachNhungGhiPhut() = runTest(d) {
         val v = vm("code"); advanceUntilIdle()
         v.start()
         clock += 60_000; v.answer(true, false); v.next()
         advanceUntilIdle()
-        assertTrue(logs.isEmpty())
+        val r = logs.getValue("1970-01-01")
+        assertEquals("{}", r.strands)
+        assertEquals(1, r.minutes)
     }
 }

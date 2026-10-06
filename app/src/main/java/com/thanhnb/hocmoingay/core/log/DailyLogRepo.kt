@@ -21,6 +21,12 @@ class DailyLogRepo(
 ) {
     fun dayOf(at: Long): String = Instant.ofEpochMilli(at).atZone(zone()).toLocalDate().toString()
 
+    suspend fun day(at: Long): DailyLogEntity? = get(dayOf(at))?.takeUnless { it.deleted }
+
+    /** 0 giờ ngày hôm sau theo giờ máy: hạn của thẻ mới vượt giới hạn trong ngày. */
+    fun nextDayStart(at: Long): Long =
+        Instant.ofEpochMilli(at).atZone(zone()).toLocalDate().plusDays(1).atStartOfDay(zone()).toInstant().toEpochMilli()
+
     suspend fun add(at: Long, change: (DailyLogEntity) -> DailyLogEntity) {
         val uid = userId() ?: return
         val day = dayOf(at)

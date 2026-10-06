@@ -1,5 +1,8 @@
 package com.thanhnb.hocmoingay.feature.review
 
+import com.thanhnb.hocmoingay.core.log.DailyLogRepo
+import com.thanhnb.hocmoingay.core.log.MinuteMeter
+import com.thanhnb.hocmoingay.core.review.MINUTE_MS
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
@@ -79,6 +82,8 @@ class ReviewViewModel(
     private val load: suspend (lessonId: String) -> LessonBody?,
     private val writeScope: CoroutineScope, // graph.scope: chấm xong rồi rời tab vẫn ghi
     nextDue: Flow<Long?>,
+    private val log: DailyLogRepo? = null,
+    private val now: () -> Long = System::currentTimeMillis,
 ) : ViewModel() {
     data class Ui(val loading: Boolean = true, val items: List<ReviewItem> = emptyList(), val pos: Int = 0)
 
@@ -97,16 +102,26 @@ class ReviewViewModel(
                 reviewItem(c, cache.getOrPut(id) { load(id) })
             }
             _ui.value = Ui(loading = false, items = items)
+            shownAt = now()
         }
     }
 
     fun preview(item: ReviewItem): Map<Rating, Long> = repo.preview(item.card)
 
+    private var shownAt = 0L
+    private val meter = MinuteMeter { at, m -> log?.let { l -> writeScope.launch { l.add(at) { it.copy(minutes = it.minutes + m) } } } }
+
     fun rate(r: Rating) {
         val item = _ui.value.items.getOrNull(_ui.value.pos) ?: return
+        val t = now()
+        meter.add(t, minOf(t - shownAt, 5 * MINUTE_MS))
+        shownAt = t
         writeScope.launch { repo.rate(item.card.id, r) }
         _ui.update { it.copy(pos = it.pos + 1) }
+        if (_ui.value.pos >= _ui.value.items.size) meter.flush(t)
     }
+
+    override fun onCleared() = meter.flush(now())
 }
 
 @Composable

@@ -161,7 +161,7 @@ fun AppNav(graph: AppGraph) {
                         }
                         entry<Review> {
                             ReviewScreen(
-                                viewModel { ReviewViewModel(graph.reviews, { graph.lessons.load(it)?.body }, graph.scope, graph.db.learner().observeNextDue()) },
+                                viewModel { ReviewViewModel(graph.reviews, { graph.lessons.load(it)?.body }, graph.scope, graph.db.learner().observeNextDue(), graph.log) },
                                 online = graph.net.online.collectAsStateWithLifecycle().value, api = graph.code, icon = CardsIcon,
                             )
                         }
