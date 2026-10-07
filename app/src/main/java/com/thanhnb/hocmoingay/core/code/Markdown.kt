@@ -60,7 +60,8 @@ sealed interface Md {
 
 private val IMG = Regex("!\\[([^\\]]*)]\\(([^)]+)\\)")
 private val NUM_ITEM = Regex("(\\d+)\\. (.*)")
-private val INLINE = Regex("`([^`]+)`|\\*\\*([^*]+)\\*\\*|~~([^~]+)~~|\\*([^*\\s][^*]*)\\*")
+// Nghiêng được chứa **đậm** bên trong (*I **enjoy** it.*), nên nhóm 4 cho phép cặp ** và dựng đệ quy.
+private val INLINE = Regex("`([^`]+)`|\\*\\*([^*]+)\\*\\*|~~([^~]+)~~|\\*((?:\\*\\*[^*]+\\*\\*|[^*\\s])(?:\\*\\*[^*]+\\*\\*|[^*])*?)\\*(?!\\*)")
 private val TABLE_RULE = Regex("\\|[\\s:|-]+")
 
 /** Markdown tối giản, đủ cho giáo trình. Khối ```mermaid hiện như code, vì sơ đồ để sang f3. */
@@ -117,7 +118,7 @@ fun inlineMd(
             g[1] != null -> withStyle(code) { append(m.groupValues[1]) }
             g[2] != null -> withStyle(bold) { append(m.groupValues[2]) }
             g[3] != null -> withStyle(strike) { append(m.groupValues[3]) }
-            else -> withStyle(italic) { append(m.groupValues[4]) }
+            else -> withStyle(italic) { append(inlineMd(m.groupValues[4], code, bold, strike, italic)) }
         }
         last = m.range.last + 1
     }

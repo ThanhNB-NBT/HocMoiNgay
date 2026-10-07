@@ -35,4 +35,15 @@ class MarkdownTest {
         assertEquals("He go. → He goes.", s.text)
         assertEquals(listOf(0 to 6, 9 to 17), s.spanStyles.map { it.start to it.end })
     }
+
+    @Test fun damLongTrongNghieng() {
+        val bold = SpanStyle(fontWeight = FontWeight.Bold)
+        fun md(t: String) = inlineMd(t, code = SpanStyle(), bold = bold)
+        val a = md("*I **enjoy working** here.*")
+        assertEquals("I enjoy working here.", a.text)
+        assertEquals(listOf(2 to 15), a.spanStyles.filter { it.item == bold }.map { it.start to it.end })
+        assertEquals("Never have I seen it.", md("***Never have I** seen it.*").text)
+        assertEquals("two years ago", md("*two years **ago***").text)
+        assertEquals("a b c", md("**a** b *c*").text)
+    }
 }
