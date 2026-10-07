@@ -47,4 +47,20 @@ class PlayerViewModelTest {
         gate.complete(Unit); advanceUntilIdle()
         assertEquals("done", progress.getValue(id).status)
     }
+
+    @Test fun nutNguPhapChiHienChuDiemCoTrenMay() = runTest(d) {
+        val bodies = mapOf(
+            "w/A1/c/task" to """{"title":"t","kind":"task","grammar":["g/A1/c/be","g/A1/c/chua-tai"],"cards":[{"key":"e","type":"explain","md":"m"}]}""",
+            "g/A1/c/be" to """{"title":"Động từ to be","cards":[{"key":"e","type":"explain","md":"m"}]}""",
+        )
+        val r = LessonRepo(
+            lesson = { i -> bodies[i]?.let { LessonEntity(i, i.substringBefore('/'), body = it) } }, track = { "english" },
+            getProgress = { progress[it] }, putProgress = { progress[it.lessonId] = it },
+            cardsByIds = { emptyList() }, putCards = {}, tx = { it() }, userId = { "u1" }, afterWrite = {}, cpu = d,
+        )
+        val v = PlayerViewModel("w/A1/c/task", r, CodeApi { _, _ -> "{}" }, MutableStateFlow(true), flowOf(null), writeScope = this)
+        advanceUntilIdle()
+        assertEquals(listOf("g/A1/c/be" to "Động từ to be"), v.grammar.value)
+        v.viewModelScope.cancel()
+    }
 }

@@ -228,6 +228,7 @@ fun AppNav(graph: AppGraph) {
                                 viewModel { PlayerViewModel(k.lessonId, graph.lessons, graph.code, graph.net.online, graph.db.learner().observeProgress(k.lessonId), graph.scope, graph.log) },
                                 k.lessonId, onBack = { backStack.removeLastOrNull() },
                                 onOpenEditor = { key -> backStack.add(CodeEditor(k.lessonId, key)) },
+                                onOpenLesson = { backStack.add(LessonPlayer(it)) },
                             )
                         }
                         entry<CodeEditor> { k ->

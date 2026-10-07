@@ -43,6 +43,9 @@ class PlayerViewModel(
     val missing = _missing.asStateFlow()
     private val _q = MutableStateFlow(PlayerQueue(0))
     val queue = _q.asStateFlow()
+    private val _grammar = MutableStateFlow<List<Pair<String, String>>>(emptyList())
+    /** (id, tên) chủ điểm Ngữ pháp liên quan có trên máy: nút "Xem ngữ pháp" ở màn mở đầu. */
+    val grammar = _grammar.asStateFlow()
     private val _started = MutableStateFlow(false)
     val started = _started.asStateFlow()
     val cardState: StateFlow<JsonObject> = progress.map { cardStateOf(it) }
@@ -56,6 +59,7 @@ class PlayerViewModel(
             _track.value = l.track
             _q.value = PlayerQueue(l.body.cards.size)
             repo.start(lessonId)
+            _grammar.value = l.body.grammar.mapNotNull { g -> repo.load(g)?.let { g to it.body.title } }
         }
     }
 

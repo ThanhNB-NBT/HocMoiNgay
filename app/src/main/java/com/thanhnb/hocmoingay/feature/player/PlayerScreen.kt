@@ -31,6 +31,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -46,6 +47,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.thanhnb.hocmoingay.core.lesson.LessonBody
@@ -64,7 +66,7 @@ import com.thanhnb.hocmoingay.feature.player.cards.CardView
 import kotlinx.serialization.json.JsonObject
 
 @Composable
-fun PlayerScreen(vm: PlayerViewModel, lessonId: String, onBack: () -> Unit, onOpenEditor: (String) -> Unit) {
+fun PlayerScreen(vm: PlayerViewModel, lessonId: String, onBack: () -> Unit, onOpenEditor: (String) -> Unit, onOpenLesson: (String) -> Unit = {}) {
     val body = vm.body.collectAsStateWithLifecycle().value
     val missing = vm.missing.collectAsStateWithLifecycle().value
     val q = vm.queue.collectAsStateWithLifecycle().value
@@ -72,6 +74,7 @@ fun PlayerScreen(vm: PlayerViewModel, lessonId: String, onBack: () -> Unit, onOp
     val online = vm.online.collectAsStateWithLifecycle().value
     val states = vm.cardState.collectAsStateWithLifecycle().value
     val track = vm.track.collectAsStateWithLifecycle().value
+    val grammar = vm.grammar.collectAsStateWithLifecycle().value
     val haptic = LocalHapticFeedback.current
     if (missing) return Placeholder("Không mở được bài", "Bài chưa có trên máy hoặc dữ liệu hỏng. Mở lại app khi có mạng để kéo giáo trình mới.")
     if (body == null) return Box(Modifier.fillMaxSize())
@@ -79,7 +82,7 @@ fun PlayerScreen(vm: PlayerViewModel, lessonId: String, onBack: () -> Unit, onOp
         Column(Modifier.fillMaxSize().safeDrawingPadding()) {
             TopBar(q.progress, onBack)
             when {
-                !started -> Intro(body, lessonId, vm::start)
+                !started -> Intro(body, lessonId, grammar, onOpenLesson, vm::start)
                 q.finished -> Done(q.score, body.codePending(states), body.hasReview, body.kind == "checkpoint", onBack)
                 else -> {
                     // số trang tăng khi card sai được thêm vào cuối: lambda phải đọc giá trị mới, không phải q lúc dựng đầu
@@ -144,7 +147,7 @@ private fun TopBar(progress: Float, onBack: () -> Unit) {
 }
 
 @Composable
-private fun Intro(b: LessonBody, lessonId: String, onStart: () -> Unit) {
+private fun Intro(b: LessonBody, lessonId: String, grammar: List<Pair<String, String>>, onOpenLesson: (String) -> Unit, onStart: () -> Unit) {
     Column(Modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Spacer(Modifier.weight(1f))
         Text(b.title, Modifier.shared("lesson-$lessonId"), style = MaterialTheme.typography.displaySmall)
@@ -156,6 +159,11 @@ private fun Intro(b: LessonBody, lessonId: String, onStart: () -> Unit) {
             }
         }
         Text("${b.cards.size} thẻ · khoảng ${b.estimateMin} phút", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        grammar.forEach { (id, title) ->
+            OutlinedButton({ onOpenLesson(id) }, Modifier.fillMaxWidth()) {
+                Text("Xem ngữ pháp: $title", maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+        }
         Spacer(Modifier.weight(1f))
         PushButton("Bắt đầu", onStart, Modifier.fillMaxWidth(), icon = Icons.AutoMirrored.Filled.ArrowForward)
     }

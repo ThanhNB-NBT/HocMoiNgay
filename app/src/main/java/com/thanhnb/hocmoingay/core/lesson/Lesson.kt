@@ -26,6 +26,7 @@ data class LessonBody(
     val pattern: List<String> = emptyList(),
     val difficulty: String? = null,
     val review: List<ReviewNote> = emptyList(),
+    val grammar: List<String> = emptyList(), // id chủ điểm Ngữ pháp liên quan (bài task tiếng Anh)
     @Transient val cards: List<Card> = emptyList(), // parse riêng từng card để một card hỏng không kéo cả bài
 ) {
     /** Bài có thẻ ôn (card `review: true` hoặc ghi chú `review`): màn Xong mới nói "đã vào lịch ôn". */
