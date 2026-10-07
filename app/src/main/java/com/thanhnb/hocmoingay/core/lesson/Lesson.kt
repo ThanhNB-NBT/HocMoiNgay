@@ -107,9 +107,11 @@ sealed interface Card {
 ) : Card
 @Serializable @SerialName("listen") data class Listen(
     override val key: String, override val review: Boolean = false, val text: String? = null, val audio: String? = null,
-    val questions: List<JsonObject> = emptyList(),
+    val questions: List<JsonObject> = emptyList(), val vi: String = "", // vi: bản dịch, hiện khi người học bấm
 ) : Card
-@Serializable @SerialName("read") data class Read(override val key: String, override val review: Boolean = false, val md: String, val questions: List<JsonObject> = emptyList()) : Card
+@Serializable @SerialName("read") data class Read(
+    override val key: String, override val review: Boolean = false, val md: String, val questions: List<JsonObject> = emptyList(), val vi: String = "",
+) : Card
 @Serializable @SerialName("minimal_pair") data class MinimalPair(override val key: String, override val review: Boolean = false, val pairs: List<List<String>>, val focus: String = "") : Card
 @Serializable @SerialName("speak") data class Speak(override val key: String, override val review: Boolean = false, val text: String) : Card
 @Serializable @SerialName("shadow") data class Shadow(override val key: String, override val review: Boolean = false, val text: String) : Card

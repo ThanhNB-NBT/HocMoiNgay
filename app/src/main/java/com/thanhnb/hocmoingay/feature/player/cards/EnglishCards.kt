@@ -112,6 +112,7 @@ fun ListenCard(c: Listen, ctx: CardCtx) {
         } else {
             TextButton(onClick = { show = true }) { Text("Hiện lời") }
         }
+        if (show || ctx.answered) Translation(c.vi)
         QuestionsBlock(qs, ctx)
     }
 }
@@ -121,8 +122,19 @@ fun ReadCard(c: Read, ctx: CardCtx) {
     val qs = remember(c) { parseQuestions(c.questions) }
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Markdown(c.md)
+        Translation(c.vi)
         QuestionsBlock(qs, ctx)
     }
+}
+
+/** Bản dịch tiếng Việt của bài nghe/đọc: ẩn mặc định để người học tự hiểu trước. */
+@Composable
+private fun Translation(vi: String) {
+    if (vi.isBlank()) return
+    var open by rememberSaveable { mutableStateOf(false) }
+    if (open) Text(vi, Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.secondaryContainer, RoundedCornerShape(16.dp)).padding(14.dp),
+        style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSecondaryContainer)
+    else TextButton(onClick = { open = true }) { Text("Xem bản dịch") }
 }
 
 /** C6: app đọc một từ trong cặp, người học chọn từ vừa nghe. Đúng cả các lượt ngay lần đầu thì card đúng. */

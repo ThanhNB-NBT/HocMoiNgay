@@ -68,4 +68,10 @@ class LessonTest {
         assertEquals(true, parseLesson("""{"title":"t","cards":[],"review":[{"key":"r","front":"F","back":"B"}]}""")!!.hasReview)
         assertEquals(false, parseLesson("""{"title":"t","cards":[{"key":"a","type":"explain","md":"m"}]}""")!!.hasReview)
     }
+
+    @Test fun listenReadCoBanDich() {
+        val b = parseLesson("""{"title":"t","cards":[{"key":"l","type":"listen","text":"Hi.","vi":"Chào.","questions":[]},{"key":"r","type":"read","md":"m","questions":[]}]}""")!!
+        assertEquals("Chào.", (b.cards[0] as Listen).vi)
+        assertEquals("", (b.cards[1] as Read).vi)
+    }
 }
