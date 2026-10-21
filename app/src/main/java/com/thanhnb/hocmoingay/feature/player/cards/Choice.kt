@@ -1,6 +1,7 @@
 package com.thanhnb.hocmoingay.feature.player.cards
 
 import androidx.compose.foundation.BorderStroke
+import com.thanhnb.hocmoingay.core.theme.MONO_FEATURES
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -39,8 +40,8 @@ fun ChoiceRow(text: AnnotatedString, mark: Mark, enabled: Boolean, why: String?,
     Column {
         // lựa chọn đã tô màu sau khi chấm vẫn rõ nét; chỉ ô còn IDLE mới mờ đi
         Pushable(
-            onClick, face, RoundedCornerShape(20.dp), Modifier.fillMaxWidth(), edge = edge,
-            border = if (mark == Mark.IDLE) BorderStroke(2.dp, cs.outlineVariant) else null, enabled = enabled || mark != Mark.IDLE,
+            onClick, face, RoundedCornerShape(14.dp), Modifier.fillMaxWidth(), edge = edge,
+            border = if (mark == Mark.IDLE) BorderStroke(1.dp, cs.outlineVariant) else null, enabled = enabled || mark != Mark.IDLE,
         ) {
             Row(Modifier.padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(text, Modifier.weight(1f), color = fg, style = MaterialTheme.typography.bodyLarge)
@@ -60,7 +61,7 @@ fun Why(text: String, ok: Boolean) {
     val f = LocalFun.current
     Text(
         // chỉ đổi phông cho `code`, giữ màu chữ của dòng để đủ tương phản trên nền coral
-        inlineMd(text, SpanStyle(fontFamily = JetBrainsMono), SpanStyle(fontWeight = FontWeight.Bold)),
+        inlineMd(text, SpanStyle(fontFamily = JetBrainsMono, fontFeatureSettings = MONO_FEATURES), SpanStyle(fontWeight = FontWeight.Bold)),
         Modifier.padding(start = 12.dp, end = 12.dp, top = 6.dp),
         style = MaterialTheme.typography.bodyMedium,
         color = if (ok) MaterialTheme.colorScheme.onSurface else f.onCoralContainer,

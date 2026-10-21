@@ -23,7 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.thanhnb.hocmoingay.core.ui.Flower
+import com.thanhnb.hocmoingay.core.ui.Tile
 import com.thanhnb.hocmoingay.core.theme.TrackColors
 
 /** Khung tạm cho màn chưa làm; plan c/d/e thay bằng màn thật. */
@@ -41,7 +41,7 @@ fun Placeholder(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         if (icon != null) {
-            Box(Modifier.size(112.dp).background(MaterialTheme.colorScheme.primaryContainer, Flower), contentAlignment = Alignment.Center) {
+            Box(Modifier.size(112.dp).background(MaterialTheme.colorScheme.primaryContainer, Tile), contentAlignment = Alignment.Center) {
                 Icon(icon, null, Modifier.size(44.dp), tint = MaterialTheme.colorScheme.onPrimaryContainer)
             }
             Spacer(Modifier.height(24.dp))

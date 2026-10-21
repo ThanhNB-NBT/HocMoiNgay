@@ -170,8 +170,8 @@ fun SettingsScreen(
 @Composable
 private fun Section(text: String, content: @Composable () -> Unit) =
     Pushable(
-        null, MaterialTheme.colorScheme.surfaceContainerLowest, RoundedCornerShape(24.dp), Modifier.fillMaxWidth(),
-        edge = MaterialTheme.colorScheme.outlineVariant, border = BorderStroke(2.dp, MaterialTheme.colorScheme.outlineVariant),
+        null, MaterialTheme.colorScheme.surfaceContainerLowest, RoundedCornerShape(16.dp), Modifier.fillMaxWidth(),
+        edge = MaterialTheme.colorScheme.outlineVariant, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(text, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)

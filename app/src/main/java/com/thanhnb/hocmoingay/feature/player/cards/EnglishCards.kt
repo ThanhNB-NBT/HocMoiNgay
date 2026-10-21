@@ -230,7 +230,7 @@ private fun LineBubble(l: Turn.Line, onSpeak: () -> Unit) {
     var vi by rememberSaveable { mutableStateOf(false) }
     Column(Modifier.fillMaxWidth(0.85f)) {
         Text(l.who, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Pushable({ onSpeak(); vi = !vi }, MaterialTheme.colorScheme.surfaceContainerHigh, RoundedCornerShape(20.dp)) {
+        Pushable({ onSpeak(); vi = !vi }, MaterialTheme.colorScheme.surfaceContainerHigh, RoundedCornerShape(14.dp)) {
             Column(Modifier.padding(14.dp)) {
                 Text(l.text, style = MaterialTheme.typography.bodyLarge)
                 if (vi && l.vi.isNotBlank()) Text(l.vi, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -243,7 +243,7 @@ private fun LineBubble(l: Turn.Line, onSpeak: () -> Unit) {
 private fun MyBubble(text: String) {
     val t = LocalTrack.current
     Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
-        Text(text, Modifier.fillMaxWidth(0.85f).background(t.container, RoundedCornerShape(20.dp)).padding(14.dp), color = t.onContainer, style = MaterialTheme.typography.bodyLarge)
+        Text(text, Modifier.fillMaxWidth(0.85f).background(t.container, RoundedCornerShape(14.dp)).padding(14.dp), color = t.onContainer, style = MaterialTheme.typography.bodyLarge)
     }
 }
 

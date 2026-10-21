@@ -40,7 +40,7 @@ fun NotifyCard(reminders: List<String>, modifier: Modifier = Modifier) {
     val ask = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted = it; denied = !it }
     if (granted) return
     val cs = MaterialTheme.colorScheme
-    Pushable(null, cs.surfaceContainerHigh, RoundedCornerShape(24.dp), modifier.padding(top = 14.dp).fillMaxWidth()) {
+    Pushable(null, cs.surfaceContainerHigh, RoundedCornerShape(16.dp), modifier.padding(top = 14.dp).fillMaxWidth()) {
         Column(Modifier.padding(18.dp)) {
             Text("Bật thông báo nhắc học", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             Text(

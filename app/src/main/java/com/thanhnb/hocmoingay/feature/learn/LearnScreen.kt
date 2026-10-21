@@ -52,11 +52,10 @@ import com.thanhnb.hocmoingay.core.theme.JetBrainsMono
 import com.thanhnb.hocmoingay.core.theme.LocalTrack
 import com.thanhnb.hocmoingay.core.theme.ProvideTrack
 import com.thanhnb.hocmoingay.core.theme.Track
-import com.thanhnb.hocmoingay.core.ui.Cookie
-import com.thanhnb.hocmoingay.core.ui.Flower
+import com.thanhnb.hocmoingay.core.ui.Tile
 import com.thanhnb.hocmoingay.core.ui.Pushable
 import com.thanhnb.hocmoingay.core.ui.rise
-import com.thanhnb.hocmoingay.core.ui.shapeFor
+
 import com.thanhnb.hocmoingay.core.ui.shared
 import com.thanhnb.hocmoingay.feature.Placeholder
 import com.thanhnb.hocmoingay.feature.ScreenHeader
@@ -148,7 +147,7 @@ fun LearnScreen(
 @Composable
 private fun VocabEntryCard(onClick: () -> Unit) {
     val t = LocalTrack.current
-    Pushable(onClick, t.accent, RoundedCornerShape(24.dp), Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+    Pushable(onClick, t.accent, RoundedCornerShape(16.dp), Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text("Sổ từ vựng", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = t.onAccent)
@@ -165,11 +164,11 @@ private fun CourseCard(item: CourseItem, modifier: Modifier, onClick: () -> Unit
     val t = LocalTrack.current
     val cs = MaterialTheme.colorScheme
     Pushable(
-        onClick, cs.surfaceContainerLowest, RoundedCornerShape(24.dp), modifier.padding(horizontal = 20.dp).fillMaxWidth(),
-        edge = cs.outlineVariant, border = BorderStroke(2.dp, cs.outlineVariant),
+        onClick, cs.surfaceContainerLowest, RoundedCornerShape(16.dp), modifier.padding(horizontal = 20.dp).fillMaxWidth(),
+        edge = cs.outlineVariant, border = BorderStroke(1.dp, cs.outlineVariant),
     ) {
         Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.shared("glyph-${c.id}").size(58.dp).background(t.accent, shapeFor(c.id)), contentAlignment = Alignment.Center) {
+            Box(Modifier.shared("glyph-${c.id}").size(58.dp).background(t.accent, Tile), contentAlignment = Alignment.Center) {
                 Text(courseGlyph(c.id, c.title), color = t.onAccent, fontFamily = JetBrainsMono, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall, maxLines = 1)
             }
             Spacer(Modifier.width(14.dp))
@@ -201,7 +200,7 @@ private fun PlacementCard(level: String?, onClick: () -> Unit) {
         )
         return
     }
-    Pushable(onClick, t.container, RoundedCornerShape(24.dp), Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+    Pushable(onClick, t.container, RoundedCornerShape(16.dp), Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text("Chưa biết bắt đầu từ cấp nào?", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = t.onContainer)
             Text("Làm bài xếp lớp khoảng 10 phút để app chọn trình độ cho bạn.", style = MaterialTheme.typography.bodyMedium, color = t.onContainer)

@@ -1,6 +1,7 @@
 package com.thanhnb.hocmoingay.core.auth
 
 import androidx.compose.foundation.layout.Arrangement
+import com.thanhnb.hocmoingay.core.theme.mono
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -176,20 +177,20 @@ private fun TrackCollage() {
         ProvideTrack(Track.CODE) {
             val t = LocalTrack.current
             Surface(
-                color = t.container, contentColor = t.onContainer, shape = RoundedCornerShape(24.dp),
+                color = t.container, contentColor = t.onContainer, shape = RoundedCornerShape(16.dp),
                 modifier = Modifier.fillMaxWidth(0.82f).graphicsLayer { rotationZ = -3f },
             ) {
                 Column(Modifier.padding(18.dp)) {
                     TrackLabel("Lập trình", t)
                     Spacer(Modifier.height(10.dp))
-                    Text("for ngay in range(365):\n    hoc_mot_chut()", fontFamily = JetBrainsMono, style = MaterialTheme.typography.bodyMedium)
+                    Text("for ngay in range(365):\n    hoc_mot_chut()", style = MaterialTheme.typography.bodyMedium.mono())
                 }
             }
         }
         ProvideTrack(Track.ENGLISH) {
             val t = LocalTrack.current
             Surface(
-                color = t.container, contentColor = t.onContainer, shape = RoundedCornerShape(24.dp), shadowElevation = 8.dp,
+                color = t.container, contentColor = t.onContainer, shape = RoundedCornerShape(16.dp), shadowElevation = 8.dp,
                 modifier = Modifier.align(Alignment.TopEnd).padding(top = 102.dp).fillMaxWidth(0.82f).graphicsLayer { rotationZ = 2f },
             ) {
                 Column(Modifier.padding(18.dp)) {

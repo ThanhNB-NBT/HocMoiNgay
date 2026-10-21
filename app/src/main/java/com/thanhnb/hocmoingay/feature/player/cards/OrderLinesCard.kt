@@ -1,6 +1,7 @@
 package com.thanhnb.hocmoingay.feature.player.cards
 
 import androidx.compose.foundation.BorderStroke
+import com.thanhnb.hocmoingay.core.theme.mono
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -57,7 +58,7 @@ fun OrderLinesCard(c: OrderLines, ctx: CardCtx) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text("Chương trình của bạn", style = MaterialTheme.typography.labelLarge)
         Column(
-            Modifier.fillMaxWidth().heightIn(min = 72.dp).clip(RoundedCornerShape(20.dp)).background(cs.surfaceContainerLow).padding(8.dp),
+            Modifier.fillMaxWidth().heightIn(min = 72.dp).clip(RoundedCornerShape(14.dp)).background(cs.surfaceContainerLow).padding(8.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             if (placed.isEmpty()) Text("Chạm các dòng bên dưới theo đúng thứ tự", Modifier.padding(8.dp), color = cs.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
@@ -91,10 +92,10 @@ private fun LineChip(text: String, lang: String, fade: String?, fill: String, on
     val cs = MaterialTheme.colorScheme
     val f = LocalFun.current
     val face = when (mark) { Mark.RIGHT -> f.mintContainer; Mark.WRONG -> f.coralContainer; else -> cs.surfaceContainerLowest }
-    val style = MaterialTheme.typography.bodyMedium.copy(fontFamily = JetBrainsMono, color = cs.onSurface)
+    val style = MaterialTheme.typography.bodyMedium.mono().copy(color = cs.onSurface)
     Pushable(
         onClick, face, RoundedCornerShape(14.dp), Modifier.fillMaxWidth(),
-        edge = cs.outlineVariant, border = BorderStroke(2.dp, cs.outlineVariant), enabled = enabled || mark != Mark.IDLE,
+        edge = cs.outlineVariant, border = BorderStroke(1.dp, cs.outlineVariant), enabled = enabled || mark != Mark.IDLE,
     ) {
         Row(Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
             if (fade == null) {

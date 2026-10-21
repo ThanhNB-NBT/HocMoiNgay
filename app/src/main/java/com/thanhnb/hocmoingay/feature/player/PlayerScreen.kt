@@ -1,10 +1,21 @@
 package com.thanhnb.hocmoingay.feature.player
 
+import com.thanhnb.hocmoingay.core.theme.LocalTrack
+import com.thanhnb.hocmoingay.core.ui.Settle
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.AnimatedVisibility
 import com.thanhnb.hocmoingay.core.lesson.MASTERED
 import com.thanhnb.hocmoingay.core.lesson.codePending
-import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,7 +30,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.pager.VerticalPager
+import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -41,7 +52,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -55,7 +65,7 @@ import com.thanhnb.hocmoingay.core.lesson.OrderLines
 import com.thanhnb.hocmoingay.core.theme.LocalFun
 import com.thanhnb.hocmoingay.core.theme.ProvideTrack
 import com.thanhnb.hocmoingay.core.theme.Track
-import com.thanhnb.hocmoingay.core.ui.Critter
+import com.thanhnb.hocmoingay.core.ui.Sunrise
 import com.thanhnb.hocmoingay.core.ui.PushButton
 import com.thanhnb.hocmoingay.core.ui.Pushable
 import com.thanhnb.hocmoingay.core.ui.TickUpNumber
@@ -89,15 +99,15 @@ fun PlayerScreen(vm: PlayerViewModel, lessonId: String, onBack: () -> Unit, onOp
                     val pages by rememberUpdatedState(q.order.size)
                     val pager = rememberPagerState { pages }
                     LaunchedEffect(q.pos) {
-                        pager.animateScrollToPage(q.pos, animationSpec = spring(dampingRatio = 0.8f, stiffness = 300f))
+                        pager.animateScrollToPage(q.pos, animationSpec = tween(340, easing = Settle))
                         pager.scrollToPage(q.pos) // chốt đúng trang nếu animation bị cắt ngang
                     }
                     val result = q.results[q.pos]
                     LaunchedEffect(q.pos, result) {
                         if (result != null) haptic.performHapticFeedback(if (result) HapticFeedbackType.Confirm else HapticFeedbackType.Reject)
                     }
-                    VerticalPager(pager, Modifier.weight(1f), userScrollEnabled = false, key = { it }) { page ->
-                        val idx = q.order.getOrNull(page) ?: return@VerticalPager
+                    HorizontalPager(pager, Modifier.weight(1f), userScrollEnabled = false, key = { it }, pageSpacing = 24.dp, verticalAlignment = Alignment.Top) { page ->
+                        val idx = q.order.getOrNull(page) ?: return@HorizontalPager
                         val card = body.cards[idx]
                         val ctx = CardCtx(
                             lessonId = lessonId, cardKey = card.key, seed = "$lessonId#${card.key}#$page", online = online, api = vm.api,
@@ -106,8 +116,7 @@ fun PlayerScreen(vm: PlayerViewModel, lessonId: String, onBack: () -> Unit, onOp
                             answered = page in q.results, onAnswer = { ok, graded -> if (page == q.pos) vm.answer(ok, graded) }, active = page == q.pos,
                         )
                         Column(
-                            Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 12.dp)
-                                .answerFeedback(q.results[page]),
+                            Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 16.dp),
                         ) {
                             if (card is OrderLines) Text("Xếp các dòng thành chương trình đúng", Modifier.padding(bottom = 12.dp), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                             key(page) { CardView(card, ctx) }
@@ -120,28 +129,14 @@ fun PlayerScreen(vm: PlayerViewModel, lessonId: String, onBack: () -> Unit, onOp
     }
 }
 
-/** Đúng: cả khối card nảy nhẹ 1 → 1.03 → 1. Sai: lắc ngang kiểu lò xo. */
-private fun Modifier.answerFeedback(result: Boolean?): Modifier = composed {
-    val x = remember { Animatable(0f) }
-    val s = remember { Animatable(1f) }
-    LaunchedEffect(result) {
-        when (result) {
-            true -> { s.snapTo(1.03f); s.animateTo(1f, spring(dampingRatio = 0.4f, stiffness = 500f)) }
-            false -> { x.snapTo(18f); x.animateTo(0f, spring(dampingRatio = 0.25f, stiffness = 600f)) }
-            null -> {}
-        }
-    }
-    graphicsLayer { translationX = x.value * density; scaleX = s.value; scaleY = s.value }
-}
-
 @Composable
 private fun TopBar(progress: Float, onBack: () -> Unit) {
-    val p by animateFloatAsState(progress, spring(dampingRatio = 0.7f, stiffness = 200f), label = "tiến độ")
+    val p by animateFloatAsState(progress, tween(400, easing = Settle), label = "tiến độ")
     val cs = MaterialTheme.colorScheme
     Row(Modifier.fillMaxWidth().padding(start = 4.dp, end = 20.dp, top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
         IconButton(onClick = onBack) { Icon(Icons.Filled.Close, "Đóng bài") }
-        Box(Modifier.weight(1f).height(14.dp).clip(CircleShape).background(cs.surfaceContainerHigh)) {
-            Box(Modifier.fillMaxHeight().fillMaxWidth(p).clip(CircleShape).background(cs.primaryContainer))
+        Box(Modifier.weight(1f).height(6.dp).clip(CircleShape).background(cs.surfaceContainerHigh)) {
+            Box(Modifier.fillMaxHeight().fillMaxWidth(p).clip(CircleShape).background(LocalTrack.current.accent))
         }
     }
 }
@@ -151,7 +146,7 @@ private fun Intro(b: LessonBody, lessonId: String, grammar: List<Pair<String, St
     Column(Modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Spacer(Modifier.weight(1f))
         Text(b.title, Modifier.shared("lesson-$lessonId"), style = MaterialTheme.typography.displaySmall)
-        Pushable(null, MaterialTheme.colorScheme.secondaryContainer, RoundedCornerShape(28.dp), Modifier.fillMaxWidth()) {
+        Pushable(null, MaterialTheme.colorScheme.secondaryContainer, RoundedCornerShape(16.dp), Modifier.fillMaxWidth()) {
             Column(Modifier.padding(20.dp)) {
                 Text("Học xong bài này, bạn sẽ", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSecondaryContainer)
                 Spacer(Modifier.height(6.dp))
@@ -169,14 +164,39 @@ private fun Intro(b: LessonBody, lessonId: String, grammar: List<Pair<String, St
     }
 }
 
+/** Thanh dưới: trả lời xong thì cả thanh đổi nền xanh/đất nung, kèm một dòng nói đúng hay sai (chỉ câu có chấm). */
 @Composable
 private fun BottomBar(q: PlayerQueue, onNext: () -> Unit) {
     val r = q.results[q.pos]
+    val graded = q.pos in q.graded
     val f = LocalFun.current
+    val cs = MaterialTheme.colorScheme
+    var last by remember { mutableStateOf(true) } // giữ chữ khi thanh đang thu lại
+    if (r != null) last = r
+    val tone = when { r == null || !graded -> cs.background; r -> f.mintContainer; else -> f.coralContainer }
+    val bg by animateColorAsState(tone, tween(220), label = "nền phản hồi")
     // luôn giữ chỗ: pager đổi chiều cao giữa lúc cuộn thì dừng lệch giữa hai trang
-    Box(Modifier.fillMaxWidth().heightIn(min = 80.dp).padding(horizontal = 20.dp, vertical = 12.dp)) {
+    Column(
+        Modifier.fillMaxWidth().background(bg).heightIn(min = 76.dp).padding(horizontal = 20.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        AnimatedVisibility(
+            r != null && graded,
+            enter = fadeIn(tween(160)) + expandVertically(tween(220, easing = Settle)),
+            exit = fadeOut(tween(100)) + shrinkVertically(tween(160)),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(if (last) Icons.Filled.Check else Icons.Filled.Close, null, Modifier.size(22.dp), tint = if (last) f.mint else f.coral)
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    if (last) "Chính xác" else "Chưa đúng. Thẻ này sẽ quay lại ở cuối bài.",
+                    style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold,
+                    color = if (last) cs.onSurface else f.onCoralContainer,
+                )
+            }
+        }
         if (r == true) PushButton("Tiếp", onNext, Modifier.fillMaxWidth(), icon = Icons.AutoMirrored.Filled.ArrowForward)
-        else if (r == false) PushButton("Làm lại sau", onNext, Modifier.fillMaxWidth(), color = f.coral, contentColor = f.onCoral)
+        else if (r == false) PushButton("Tiếp", onNext, Modifier.fillMaxWidth(), color = f.coral, contentColor = f.onCoral)
     }
 }
 
@@ -186,9 +206,9 @@ private fun Done(score: Int, codePending: Boolean, hasReview: Boolean, checkpoin
     val f = LocalFun.current
     Column(Modifier.fillMaxSize().padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(20.dp)) {
         Spacer(Modifier.weight(1f))
-        Critter(Modifier.size(96.dp))
+        Sunrise(Modifier.size(96.dp))
         Text(if (checkpoint) "Xong bài kiểm!" else "Xong bài!", style = MaterialTheme.typography.displaySmall)
-        Pushable(null, f.coralContainer, RoundedCornerShape(32.dp), Modifier.fillMaxWidth(), edge = f.coral) {
+        Pushable(null, f.coralContainer, RoundedCornerShape(18.dp), Modifier.fillMaxWidth(), edge = f.coral) {
             Column(Modifier.fillMaxWidth().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 Row(verticalAlignment = Alignment.Bottom) {
                     TickUpNumber(score, MaterialTheme.typography.displayLarge.copy(fontWeight = FontWeight.Bold), f.onCoralContainer)

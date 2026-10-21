@@ -57,7 +57,7 @@ import com.thanhnb.hocmoingay.core.theme.LocalFun
 import com.thanhnb.hocmoingay.core.theme.LocalTrack
 import com.thanhnb.hocmoingay.core.theme.ProvideTrack
 import com.thanhnb.hocmoingay.core.theme.Track
-import com.thanhnb.hocmoingay.core.ui.Critter
+import com.thanhnb.hocmoingay.core.ui.Sunrise
 import com.thanhnb.hocmoingay.core.ui.PushButton
 import com.thanhnb.hocmoingay.core.ui.Pushable
 import com.thanhnb.hocmoingay.feature.Placeholder
@@ -245,7 +245,7 @@ internal fun RatingRow(preview: Map<Rating, Long>, onRate: (Rating) -> Unit) {
     )
     Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         opts.forEach { o ->
-            Pushable({ onRate(o.r) }, o.face, RoundedCornerShape(20.dp), Modifier.weight(1f)) {
+            Pushable({ onRate(o.r) }, o.face, RoundedCornerShape(14.dp), Modifier.weight(1f)) {
                 Column(Modifier.fillMaxWidth().padding(vertical = 10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(o.label, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = o.fg)
                     Text(spanText(preview.getValue(o.r)), style = MaterialTheme.typography.labelMedium, color = o.fg)
@@ -261,7 +261,7 @@ private fun Finished(count: Int, onAgain: () -> Unit) {
         Modifier.fillMaxSize().safeDrawingPadding().padding(20.dp),
         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
     ) {
-        Critter(Modifier.size(96.dp))
+        Sunrise(Modifier.size(96.dp))
         Text("Ôn xong $count thẻ", style = MaterialTheme.typography.displaySmall)
         Text("Mỗi thẻ đã được xếp lịch lại theo mức bạn nhớ.", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
         PushButton("Xem còn thẻ nào", onAgain, Modifier.fillMaxWidth())

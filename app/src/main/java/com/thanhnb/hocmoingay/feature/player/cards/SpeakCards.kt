@@ -247,7 +247,7 @@ private fun FeedbackArea(text: String, minChars: Int, speaking: Boolean, sample:
 
 @Composable
 private fun WriteFbView(r: WriteFb, sample: String) {
-    Pushable(null, MaterialTheme.colorScheme.secondaryContainer, RoundedCornerShape(24.dp), Modifier.fillMaxWidth()) {
+    Pushable(null, MaterialTheme.colorScheme.secondaryContainer, RoundedCornerShape(16.dp), Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("${r.score}/10", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
             Text(if (r.taskDone) "Đã làm đúng yêu cầu của đề." else "Chưa làm đủ yêu cầu của đề.", style = MaterialTheme.typography.bodyMedium)

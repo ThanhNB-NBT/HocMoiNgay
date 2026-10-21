@@ -8,6 +8,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.em
+import androidx.compose.ui.unit.sp
 import com.thanhnb.hocmoingay.R
 
 val BeVietnamPro = FontFamily(
@@ -35,7 +36,14 @@ fun appTypography(ide: Boolean): Typography {
         displayLarge = b.displayLarge.d(), displayMedium = b.displayMedium.d(), displaySmall = b.displaySmall.d(),
         headlineLarge = b.headlineLarge.d(), headlineMedium = b.headlineMedium.d(), headlineSmall = b.headlineSmall.d(),
         titleLarge = b.titleLarge.f(head), titleMedium = b.titleMedium.f(BeVietnamPro), titleSmall = b.titleSmall.f(BeVietnamPro),
-        bodyLarge = b.bodyLarge.f(BeVietnamPro), bodyMedium = b.bodyMedium.f(BeVietnamPro), bodySmall = b.bodySmall.f(BeVietnamPro),
+        // thân chữ đọc dài: bỏ giãn ký tự mặc định của M3 (0.5sp), dòng thoáng hơn
+        bodyLarge = b.bodyLarge.f(BeVietnamPro).copy(letterSpacing = 0.sp, lineHeight = 26.sp),
+        bodyMedium = b.bodyMedium.f(BeVietnamPro).copy(letterSpacing = 0.sp, lineHeight = 22.sp), bodySmall = b.bodySmall.f(BeVietnamPro),
         labelLarge = b.labelLarge.f(BeVietnamPro), labelMedium = b.labelMedium.f(BeVietnamPro), labelSmall = b.labelSmall.f(BeVietnamPro),
     )
 }
+
+/** Tắt chữ ghép của JetBrains Mono: người mới phải thấy đúng `==`, `!=`, `->` như khi gõ, không phải ký hiệu gộp. */
+const val MONO_FEATURES = "liga 0, calt 0"
+
+fun TextStyle.mono() = copy(fontFamily = JetBrainsMono, fontFeatureSettings = MONO_FEATURES)

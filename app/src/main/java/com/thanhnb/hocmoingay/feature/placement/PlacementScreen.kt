@@ -49,7 +49,7 @@ import com.thanhnb.hocmoingay.core.theme.LocalFun
 import com.thanhnb.hocmoingay.core.theme.LocalTrack
 import com.thanhnb.hocmoingay.core.theme.ProvideTrack
 import com.thanhnb.hocmoingay.core.theme.Track
-import com.thanhnb.hocmoingay.core.ui.Critter
+import com.thanhnb.hocmoingay.core.ui.Sunrise
 import com.thanhnb.hocmoingay.core.ui.PushButton
 import com.thanhnb.hocmoingay.core.ui.Pushable
 import com.thanhnb.hocmoingay.core.ui.rise
@@ -204,9 +204,9 @@ private fun Result(ui: PlacementViewModel.Ui, onBack: () -> Unit) {
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Critter(Modifier.size(88.dp))
+        Sunrise(Modifier.size(88.dp))
         Text("Trình độ của bạn", style = MaterialTheme.typography.headlineSmall)
-        Pushable(null, f.coralContainer, RoundedCornerShape(32.dp), Modifier.fillMaxWidth(), edge = f.coral) {
+        Pushable(null, f.coralContainer, RoundedCornerShape(18.dp), Modifier.fillMaxWidth(), edge = f.coral) {
             Text(
                 ui.level, Modifier.fillMaxWidth().padding(24.dp), textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.displayLarge.copy(fontWeight = FontWeight.Bold), color = f.onCoralContainer,

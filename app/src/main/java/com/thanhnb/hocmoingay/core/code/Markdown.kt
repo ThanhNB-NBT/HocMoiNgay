@@ -1,6 +1,8 @@
 package com.thanhnb.hocmoingay.core.code
 
 import android.graphics.BitmapFactory
+import com.thanhnb.hocmoingay.core.theme.mono
+import com.thanhnb.hocmoingay.core.theme.MONO_FEATURES
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -132,7 +134,7 @@ fun Markdown(md: String, modifier: Modifier = Modifier) {
     val blocks = remember(md) { parseMd(md) }
     val cs = MaterialTheme.colorScheme
     val ty = MaterialTheme.typography
-    val code = SpanStyle(fontFamily = JetBrainsMono, color = cs.secondary, background = cs.surfaceContainerHigh)
+    val code = SpanStyle(fontFamily = JetBrainsMono, fontFeatureSettings = MONO_FEATURES, color = cs.secondary, background = cs.surfaceContainerHigh)
     val bold = SpanStyle(fontWeight = FontWeight.Bold)
     val strike = SpanStyle(textDecoration = TextDecoration.LineThrough, color = cs.error)
     Column(modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -174,7 +176,7 @@ private fun AssetImage(path: String, alt: String) {
         val bytes = assets?.bytes(path) ?: return@produceState
         value = withContext(Dispatchers.Default) { BitmapFactory.decodeByteArray(bytes, 0, bytes.size)?.asImageBitmap() }
     }
-    val shape = RoundedCornerShape(20.dp)
+    val shape = RoundedCornerShape(14.dp)
     val bmp = img
     if (bmp != null) {
         Image(bmp, alt, Modifier.fillMaxWidth().clip(shape), contentScale = ContentScale.FillWidth)
@@ -197,8 +199,8 @@ fun CodeBlock(
         var s = 0
         text.text.split('\n').map { l -> text.subSequence(s, s + l.length).also { s += l.length + 1 } }
     }
-    val shape = RoundedCornerShape(20.dp)
-    BoxWithConstraints(modifier.fillMaxWidth().clip(shape).background(cs.surfaceContainerLowest).border(BorderStroke(2.dp, cs.outlineVariant), shape)) {
+    val shape = RoundedCornerShape(14.dp)
+    BoxWithConstraints(modifier.fillMaxWidth().clip(shape).background(cs.surfaceContainerLowest).border(BorderStroke(1.dp, cs.outlineVariant), shape)) {
         Column(Modifier.horizontalScroll(rememberScrollState()).widthIn(min = maxWidth).width(IntrinsicSize.Max).padding(vertical = 10.dp)) {
             lines.forEachIndexed { i, l ->
                 val n = i + 1
@@ -210,7 +212,7 @@ fun CodeBlock(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     if (numbered) Text("$n", Modifier.width(28.dp), fontFamily = JetBrainsMono, color = cs.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
-                    Text(l, fontFamily = JetBrainsMono, style = MaterialTheme.typography.bodyMedium, softWrap = false)
+                    Text(l, style = MaterialTheme.typography.bodyMedium.mono(), softWrap = false)
                 }
             }
         }

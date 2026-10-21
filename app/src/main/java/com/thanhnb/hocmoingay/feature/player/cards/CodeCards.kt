@@ -1,6 +1,8 @@
 package com.thanhnb.hocmoingay.feature.player.cards
 
 import androidx.compose.foundation.background
+import com.thanhnb.hocmoingay.core.theme.mono
+import com.thanhnb.hocmoingay.core.theme.MONO_FEATURES
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
@@ -48,6 +50,7 @@ import com.thanhnb.hocmoingay.core.lesson.FindBug
 import com.thanhnb.hocmoingay.core.lesson.OrderLines
 import com.thanhnb.hocmoingay.core.lesson.PredictOutput
 import com.thanhnb.hocmoingay.core.lesson.RunExample
+import com.thanhnb.hocmoingay.core.lesson.Trace
 import com.thanhnb.hocmoingay.core.net.ApiResult
 import com.thanhnb.hocmoingay.core.net.FreeRun
 import com.thanhnb.hocmoingay.core.net.compileEta
@@ -72,7 +75,7 @@ import kotlinx.serialization.json.contentOrNull
 fun langName(k: String): String =
     LANGUAGES[k] ?: mapOf("postgres" to "PostgreSQL", "sqlite3" to "SQLite", "bash" to "Bash")[k] ?: k
 
-private fun mono(s: String) = buildAnnotatedString { withStyle(SpanStyle(fontFamily = JetBrainsMono)) { append(s) } }
+private fun mono(s: String) = buildAnnotatedString { withStyle(SpanStyle(fontFamily = JetBrainsMono, fontFeatureSettings = MONO_FEATURES)) { append(s) } }
 
 @Composable
 fun ActionButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) =
@@ -88,6 +91,7 @@ private fun Prompt(text: String) = Text(text, style = MaterialTheme.typography.t
 fun CodeCardView(card: Card, ctx: CardCtx) = when (card) {
     is PredictOutput -> PredictCard(card, ctx)
     is RunExample -> RunExampleCard(card, ctx)
+    is Trace -> TraceCard(card, ctx)
     is FillBlank -> FillBlankCard(card, ctx)
     is OrderLines -> OrderLinesCard(card, ctx)
     is FindBug -> FindBugCard(card, ctx)
@@ -117,7 +121,7 @@ private fun PredictCard(c: PredictOutput, ctx: CardCtx) {
         } else {
             OutlinedTextField(
                 given, { given = it }, Modifier.fillMaxWidth(), label = { Text("Kết quả in ra") }, minLines = 2,
-                textStyle = MaterialTheme.typography.bodyLarge.copy(fontFamily = JetBrainsMono), enabled = checked == null,
+                textStyle = MaterialTheme.typography.bodyLarge.mono(), enabled = checked == null,
             )
             if (checked == null) PushButton("Kiểm tra", {
                 val ok = predictOk(given, c.answer); checked = ok; ctx.onAnswer(ok, true)
@@ -143,7 +147,7 @@ private fun RunExampleCard(c: RunExample, ctx: CardCtx) {
         CodeBlock(c.code, c.lang)
         OutlinedTextField(
             guess, { guess = it }, Modifier.fillMaxWidth(), label = { Text("Bạn đoán in ra gì? (không bắt buộc)") },
-            textStyle = MaterialTheme.typography.bodyLarge.copy(fontFamily = JetBrainsMono),
+            textStyle = MaterialTheme.typography.bodyLarge.mono(),
         )
         ActionButton(
             when { !busy -> "Chạy thật"; compileEta(c.lang) != null -> "Đang biên dịch… thường khoảng ${compileEta(c.lang)} giây"; else -> "Đang chạy…" },
@@ -185,7 +189,7 @@ private fun FillBlankCard(c: FillBlank, ctx: CardCtx) {
             val tone = if (right) f.mint else f.coral
             OutlinedTextField(
                 fills[i], { fills[i] = it }, Modifier.fillMaxWidth(), label = { Text("Chỗ trống ${i + 1}") }, singleLine = true,
-                textStyle = MaterialTheme.typography.bodyLarge.copy(fontFamily = JetBrainsMono), readOnly = checked != null,
+                textStyle = MaterialTheme.typography.bodyLarge.mono(), readOnly = checked != null,
                 trailingIcon = if (checked == null) null else {
                     { Icon(if (right) Icons.Filled.Check else Icons.Filled.Close, if (right) "Đúng" else "Sai", tint = tone) }
                 },
@@ -262,7 +266,7 @@ private fun CodeTaskCard(c: CodeTask, ctx: CardCtx) {
                 )
             }
         }
-        if (pass) Pushable(null, f.mintContainer, RoundedCornerShape(24.dp), Modifier.fillMaxWidth(), edge = f.mint) {
+        if (pass) Pushable(null, f.mintContainer, RoundedCornerShape(16.dp), Modifier.fillMaxWidth(), edge = f.mint) {
             Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Filled.Check, null, tint = f.mint)
                 Spacer(Modifier.width(8.dp))

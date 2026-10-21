@@ -44,8 +44,7 @@ import com.thanhnb.hocmoingay.core.theme.LocalFun
 import com.thanhnb.hocmoingay.core.theme.LocalTrack
 import com.thanhnb.hocmoingay.core.theme.ProvideTrack
 import com.thanhnb.hocmoingay.core.theme.Track
-import com.thanhnb.hocmoingay.core.ui.Clover
-import com.thanhnb.hocmoingay.core.ui.Cookie
+import com.thanhnb.hocmoingay.core.ui.Tile
 import com.thanhnb.hocmoingay.core.ui.Pushable
 import com.thanhnb.hocmoingay.core.ui.TickUpNumber
 import com.thanhnb.hocmoingay.core.ui.rise
@@ -58,11 +57,11 @@ fun ProfileScreen(vm: ProfileViewModel, email: String?, onOpenSettings: () -> Un
     val ui by vm.ui.collectAsStateWithLifecycle()
     val cs = MaterialTheme.colorScheme
     val fun_ = LocalFun.current
-    val card = BorderStroke(2.dp, cs.outlineVariant)
+    val card = BorderStroke(1.dp, cs.outlineVariant)
     Column(Modifier.fillMaxSize().safeDrawingPadding().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)) {
         ScreenHeader("Hồ sơ", modifier = Modifier.rise(0), inset = 0.dp)
         Row(Modifier.rise(1), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(84.dp).background(cs.primaryContainer, Cookie), contentAlignment = Alignment.Center) {
+            Box(Modifier.size(84.dp).background(cs.primaryContainer, Tile), contentAlignment = Alignment.Center) {
                 Text(email?.take(1)?.uppercase() ?: "?", style = MaterialTheme.typography.headlineMedium, color = cs.onPrimaryContainer)
             }
             Spacer(Modifier.width(16.dp))
@@ -73,7 +72,7 @@ fun ProfileScreen(vm: ProfileViewModel, email: String?, onOpenSettings: () -> Un
         }
         Spacer(Modifier.height(24.dp))
         // coral: khoảnh khắc mạnh duy nhất của màn — chuỗi ngày
-        Pushable(null, fun_.coralContainer, RoundedCornerShape(28.dp), Modifier.fillMaxWidth().rise(2), edge = fun_.coral) {
+        Pushable(null, fun_.coralContainer, RoundedCornerShape(16.dp), Modifier.fillMaxWidth().rise(2), edge = fun_.coral) {
             Row(Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text("Chuỗi ngày", style = MaterialTheme.typography.titleMedium, color = fun_.onCoralContainer)
@@ -95,11 +94,11 @@ fun ProfileScreen(vm: ProfileViewModel, email: String?, onOpenSettings: () -> Un
         if (ui.courses.isNotEmpty()) Section("Chương đã thành thạo", Modifier.rise(5)) { ui.courses.forEach { CourseRow(it) } }
         Spacer(Modifier.height(14.dp))
         Pushable(
-            onOpenSettings, cs.surfaceContainerLowest, RoundedCornerShape(24.dp), Modifier.fillMaxWidth().rise(6),
+            onOpenSettings, cs.surfaceContainerLowest, RoundedCornerShape(16.dp), Modifier.fillMaxWidth().rise(6),
             edge = cs.outlineVariant, border = card,
         ) {
             Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(48.dp).background(cs.secondaryContainer, Clover), contentAlignment = Alignment.Center) {
+                Box(Modifier.size(48.dp).background(cs.secondaryContainer, Tile), contentAlignment = Alignment.Center) {
                     Icon(Icons.Filled.Settings, null, tint = cs.onSecondaryContainer)
                 }
                 Spacer(Modifier.width(14.dp))
@@ -118,7 +117,7 @@ fun ProfileScreen(vm: ProfileViewModel, email: String?, onOpenSettings: () -> Un
 private fun Section(title: String, modifier: Modifier, content: @Composable ColumnScope.() -> Unit) {
     val cs = MaterialTheme.colorScheme
     Spacer(Modifier.height(14.dp))
-    Pushable(null, cs.surfaceContainerLowest, RoundedCornerShape(24.dp), modifier.fillMaxWidth(), edge = cs.outlineVariant, border = BorderStroke(2.dp, cs.outlineVariant)) {
+    Pushable(null, cs.surfaceContainerLowest, RoundedCornerShape(16.dp), modifier.fillMaxWidth(), edge = cs.outlineVariant, border = BorderStroke(1.dp, cs.outlineVariant)) {
         Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             content()

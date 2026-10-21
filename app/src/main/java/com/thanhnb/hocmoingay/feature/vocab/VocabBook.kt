@@ -64,7 +64,7 @@ import com.thanhnb.hocmoingay.core.theme.JetBrainsMono
 import com.thanhnb.hocmoingay.core.theme.LocalTrack
 import com.thanhnb.hocmoingay.core.theme.ProvideTrack
 import com.thanhnb.hocmoingay.core.theme.Track
-import com.thanhnb.hocmoingay.core.ui.Critter
+import com.thanhnb.hocmoingay.core.ui.Sunrise
 import com.thanhnb.hocmoingay.core.ui.PushButton
 import com.thanhnb.hocmoingay.core.ui.Pushable
 import com.thanhnb.hocmoingay.feature.Placeholder
@@ -244,7 +244,7 @@ private fun Flashcards(vm: VocabViewModel, ui: VocabViewModel.Ui, refs: List<Str
             modifier.fillMaxSize().padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
         ) {
-            Critter(Modifier.size(96.dp))
+            Sunrise(Modifier.size(96.dp))
             Text("Xong ${queue.size} từ", style = MaterialTheme.typography.displaySmall)
             Text("Từ đã học sẽ quay lại ở tab Ôn tập đúng lúc bạn sắp quên, dạng điền vào câu.", style = MaterialTheme.typography.bodyLarge, color = cs.onSurfaceVariant)
             PushButton("Về sổ từ", onExit, Modifier.fillMaxWidth())

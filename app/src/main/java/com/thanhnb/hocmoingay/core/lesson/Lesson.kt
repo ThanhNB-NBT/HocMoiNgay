@@ -62,6 +62,9 @@ sealed interface Card {
     val lang: String, val code: String, val answer: String, val choices: List<String>? = null,
 ) : Card
 @Serializable @SerialName("run_example") data class RunExample(override val key: String, override val review: Boolean = false, val lang: String, val code: String) : Card
+/** Chạy từng bước: mỗi bước tô một dòng, [TraceStep.vars] là toàn bộ biến sau dòng đó, [TraceStep.out] là dòng in ra ở bước đó. */
+@Serializable @SerialName("trace") data class Trace(override val key: String, override val review: Boolean = false, val lang: String, val code: String, val steps: List<TraceStep>) : Card
+@Serializable data class TraceStep(val line: Int, val note: String, val vars: JsonObject = JsonObject(emptyMap()), val out: String? = null)
 @Serializable @SerialName("fill_blank") data class FillBlank(
     override val key: String, override val review: Boolean = false,
     val lang: String, val text: String, val answers: List<List<String>>,

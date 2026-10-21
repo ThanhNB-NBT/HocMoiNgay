@@ -74,4 +74,12 @@ class LessonTest {
         assertEquals("Chào.", (b.cards[0] as Listen).vi)
         assertEquals("", (b.cards[1] as Read).vi)
     }
+
+    @Test fun traceGiuThuTuBienVaOut() {
+        val t = parseLesson("""{"title":"t","cards":[{"key":"t","type":"trace","lang":"python","code":"a = 1\nb = 2","steps":[
+            {"line":1,"note":"n","vars":{"a":1}},{"line":2,"note":"n","vars":{"b":"'x'","a":1},"out":"1 x"}]}]}""")!!.cards[0] as Trace
+        assertEquals(listOf("b", "a"), t.steps[1].vars.keys.toList())
+        assertEquals("1 x", t.steps[1].out)
+        assertNull(t.steps[0].out)
+    }
 }

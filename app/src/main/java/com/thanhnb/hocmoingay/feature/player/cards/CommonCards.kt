@@ -1,6 +1,7 @@
 package com.thanhnb.hocmoingay.feature.player.cards
 
 import androidx.compose.foundation.layout.Arrangement
+import com.thanhnb.hocmoingay.core.theme.MONO_FEATURES
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -110,7 +111,7 @@ fun QuizBlock(q: String, choices: List<String>, answer: List<Int>, why: List<Str
     val multi = answer.size > 1
     var picked by remember { mutableStateOf(setOf<Int>()) }
     var checked by remember { mutableStateOf(false) }
-    val code = SpanStyle(fontFamily = JetBrainsMono, color = MaterialTheme.colorScheme.secondary)
+    val code = SpanStyle(fontFamily = JetBrainsMono, fontFeatureSettings = MONO_FEATURES, color = MaterialTheme.colorScheme.secondary)
     val bold = SpanStyle(fontWeight = FontWeight.Bold)
     fun check() { checked = true; onDone(quizOk(picked, answer)) }
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -145,7 +146,7 @@ private fun MatchCard(c: Match, ctx: CardCtx) {
     var matched by remember { mutableStateOf(setOf<Int>()) }
     var mistakes by remember { mutableIntStateOf(0) }
     var wrong by remember { mutableStateOf<Int?>(null) } // vế phải vừa ghép sai, tô coral một nhịp
-    val code = SpanStyle(fontFamily = JetBrainsMono, color = MaterialTheme.colorScheme.secondary)
+    val code = SpanStyle(fontFamily = JetBrainsMono, fontFeatureSettings = MONO_FEATURES, color = MaterialTheme.colorScheme.secondary)
     val bold = SpanStyle(fontWeight = FontWeight.Bold)
     LaunchedEffect(wrong) { if (wrong != null) { delay(500); wrong = null } }
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -210,7 +211,7 @@ private fun FreeTextCard(c: FreeText, ctx: CardCtx) {
             err?.let { Why(it, ok = false) }
         }
         fb?.let { r ->
-            Pushable(null, MaterialTheme.colorScheme.secondaryContainer, RoundedCornerShape(24.dp), Modifier.fillMaxWidth()) {
+            Pushable(null, MaterialTheme.colorScheme.secondaryContainer, RoundedCornerShape(16.dp), Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text("${r.score}/10", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
                     if (r.missing.isNotEmpty()) Text("Còn thiếu: " + r.missing.joinToString("; "), style = MaterialTheme.typography.bodyMedium)

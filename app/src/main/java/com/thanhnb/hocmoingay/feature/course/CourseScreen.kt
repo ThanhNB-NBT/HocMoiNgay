@@ -53,10 +53,10 @@ import com.thanhnb.hocmoingay.core.theme.LocalFun
 import com.thanhnb.hocmoingay.core.theme.LocalTrack
 import com.thanhnb.hocmoingay.core.theme.ProvideTrack
 import com.thanhnb.hocmoingay.core.theme.Track
-import com.thanhnb.hocmoingay.core.ui.Clover
+import com.thanhnb.hocmoingay.core.ui.Tile
 import com.thanhnb.hocmoingay.core.ui.Pushable
 import com.thanhnb.hocmoingay.core.ui.rise
-import com.thanhnb.hocmoingay.core.ui.shapeFor
+
 import com.thanhnb.hocmoingay.core.ui.shared
 import com.thanhnb.hocmoingay.feature.learn.courseGlyph
 import kotlinx.coroutines.Dispatchers
@@ -91,7 +91,7 @@ fun CourseScreen(vm: CourseViewModel, onBack: () -> Unit, onOpenLesson: (String)
             }
             item("head") {
                 Column(Modifier.padding(horizontal = 20.dp)) {
-                    Box(Modifier.size(72.dp).shared("glyph-${c.id}").background(t.accent, shapeFor(c.id)), contentAlignment = Alignment.Center) {
+                    Box(Modifier.size(72.dp).shared("glyph-${c.id}").background(t.accent, Tile), contentAlignment = Alignment.Center) {
                         Text(courseGlyph(c.id, c.title), color = t.onAccent, fontFamily = JetBrainsMono, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
                     }
                     Spacer(Modifier.height(16.dp))
@@ -127,7 +127,7 @@ fun CourseScreen(vm: CourseViewModel, onBack: () -> Unit, onOpenLesson: (String)
 @Composable
 private fun Stat(value: String, label: String) {
     val t = LocalTrack.current // màu của mảng, cùng tông ô ký hiệu
-    Pushable(null, t.container, RoundedCornerShape(20.dp)) {
+    Pushable(null, t.container, RoundedCornerShape(14.dp)) {
         Column(Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
             Text(value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = t.onContainer)
             Text(label, style = MaterialTheme.typography.labelMedium, color = t.onContainer)
@@ -155,8 +155,8 @@ private fun LessonRow(n: Int, l: OutlineLesson, p: ProgressEntity?, modifier: Mo
     val ready = l.status == "ready"
     val done = p?.status == "done"
     Pushable(
-        if (ready) onClick else null, cs.surfaceContainerLowest, RoundedCornerShape(20.dp), modifier.fillMaxWidth(),
-        edge = cs.outlineVariant, border = BorderStroke(2.dp, cs.outlineVariant), enabled = ready,
+        if (ready) onClick else null, cs.surfaceContainerLowest, RoundedCornerShape(14.dp), modifier.fillMaxWidth(),
+        edge = cs.outlineVariant, border = BorderStroke(1.dp, cs.outlineVariant), enabled = ready,
     ) {
         Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
             val (bg, fg) = when {
@@ -164,7 +164,7 @@ private fun LessonRow(n: Int, l: OutlineLesson, p: ProgressEntity?, modifier: Mo
                 ready -> t.container to t.onContainer
                 else -> cs.surfaceContainerHigh to cs.onSurfaceVariant
             }
-            Box(Modifier.size(40.dp).background(bg, Clover), contentAlignment = Alignment.Center) {
+            Box(Modifier.size(40.dp).background(bg, Tile), contentAlignment = Alignment.Center) {
                 if (done) Icon(Icons.Filled.Check, "Đã xong", tint = fg, modifier = Modifier.size(20.dp))
                 else Text("$n", color = fg, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelLarge)
             }

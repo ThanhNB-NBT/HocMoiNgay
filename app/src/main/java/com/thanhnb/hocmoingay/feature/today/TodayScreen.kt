@@ -32,7 +32,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.thanhnb.hocmoingay.core.theme.LocalTrack
 import com.thanhnb.hocmoingay.core.theme.ProvideTrack
 import com.thanhnb.hocmoingay.core.theme.Track
-import com.thanhnb.hocmoingay.core.ui.Critter
+import com.thanhnb.hocmoingay.core.ui.Sunrise
 import com.thanhnb.hocmoingay.core.theme.LocalFun
 import com.thanhnb.hocmoingay.core.ui.PushButton
 import com.thanhnb.hocmoingay.core.ui.Pushable
@@ -85,7 +85,7 @@ fun TodayScreen(
                 Text(date, style = type.titleSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text(hello, style = type.displaySmall)
             }
-            Critter(Modifier.size(68.dp))
+            Sunrise(Modifier.size(68.dp))
         }
         DayCard(ui, Modifier.rise(1))
         notify()
@@ -107,7 +107,7 @@ fun streakText(n: Int) = if (n == 0) "Chưa có chuỗi ngày" else "Chuỗi $n 
 @Composable
 private fun DayCard(ui: TodayViewModel.Ui, modifier: Modifier) {
     val cs = MaterialTheme.colorScheme
-    Pushable(null, cs.primaryContainer, RoundedCornerShape(32.dp), modifier.fillMaxWidth()) {
+    Pushable(null, cs.primaryContainer, RoundedCornerShape(18.dp), modifier.fillMaxWidth()) {
         Column(Modifier.padding(22.dp)) {
             Text("Hôm nay", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = cs.onPrimaryContainer)
             Row(verticalAlignment = Alignment.Bottom) {
@@ -148,7 +148,7 @@ private fun PlanRow(p: Planned, modifier: Modifier, onClick: () -> Unit) {
         val cs = MaterialTheme.colorScheme
         val face = if (track == null) cs.secondaryContainer else LocalTrack.current.container
         val ink = if (track == null) cs.onSecondaryContainer else LocalTrack.current.onContainer
-        Pushable(onClick, face, RoundedCornerShape(24.dp), modifier.fillMaxWidth()) {
+        Pushable(onClick, face, RoundedCornerShape(16.dp), modifier.fillMaxWidth()) {
             Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text(label, style = MaterialTheme.typography.labelLarge, color = ink.copy(alpha = 0.8f))
@@ -173,7 +173,7 @@ private fun PlanRow(p: Planned, modifier: Modifier, onClick: () -> Unit) {
 private fun AllDone(onOpenLearn: () -> Unit, modifier: Modifier) {
     val f = LocalFun.current
     val ink = MaterialTheme.colorScheme.onSurface
-    Pushable(null, f.mintContainer, RoundedCornerShape(28.dp), modifier.fillMaxWidth(), edge = f.mint) {
+    Pushable(null, f.mintContainer, RoundedCornerShape(16.dp), modifier.fillMaxWidth(), edge = f.mint) {
         Column(Modifier.padding(20.dp)) {
             Text("Xong việc hôm nay", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = ink)
             Text("Không còn thẻ đến hạn hay bài đang chờ. Muốn học thêm thì chọn khoá ở tab Học.", style = MaterialTheme.typography.bodyMedium, color = ink)

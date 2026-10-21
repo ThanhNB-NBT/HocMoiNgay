@@ -33,10 +33,10 @@ val LocalTrackPalette = staticCompositionLocalOf { TrackPalette(CodeLight, Engli
 /** Coral + mint, xem [FunColors]. */
 val LocalFun = staticCompositionLocalOf { FunLight }
 
-// Bo tròn hết cỡ: không góc vuông nào (Hum)
-private val HumShapes = Shapes(
-    extraSmall = RoundedCornerShape(8.dp), small = RoundedCornerShape(12.dp), medium = RoundedCornerShape(20.dp),
-    large = RoundedCornerShape(28.dp), extraLarge = RoundedCornerShape(36.dp),
+// Bo góc vừa phải, đủ mềm mà vẫn ra dáng khối (Giấy mực)
+private val PaperShapes = Shapes(
+    extraSmall = RoundedCornerShape(6.dp), small = RoundedCornerShape(10.dp), medium = RoundedCornerShape(14.dp),
+    large = RoundedCornerShape(18.dp), extraLarge = RoundedCornerShape(16.dp),
 )
 
 /** Accent của mảng đang hiển thị (spec §7.2). Đặt bằng [ProvideTrack]. */
@@ -65,7 +65,7 @@ fun HocTheme(style: ThemeStyle, dark: Boolean, content: @Composable () -> Unit) 
         MaterialTheme(
             colorScheme = scheme,
             typography = appTypography(ide = style == ThemeStyle.IDE),
-            shapes = HumShapes,
+            shapes = PaperShapes,
             content = content,
         )
     }

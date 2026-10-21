@@ -1,6 +1,7 @@
 package com.thanhnb.hocmoingay.feature.editor
 
 import androidx.compose.foundation.background
+import com.thanhnb.hocmoingay.core.theme.mono
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -54,7 +55,7 @@ fun ResultBody(out: Outcome, lang: String, solution: String?) {
         }
         val passed = j.tests.count { it.pass }
         val good = j.allPass
-        Pushable(null, if (good) f.mintContainer else f.coralContainer, RoundedCornerShape(24.dp), Modifier.fillMaxWidth(), edge = if (good) f.mint else f.coral) {
+        Pushable(null, if (good) f.mintContainer else f.coralContainer, RoundedCornerShape(16.dp), Modifier.fillMaxWidth(), edge = if (good) f.mint else f.coral) {
             Column(Modifier.padding(16.dp)) {
                 Text(
                     when { !j.compiled -> "Chưa biên dịch được"; good -> "Qua hết ${j.tests.size} test"; else -> "Qua $passed/${j.tests.size} test" },
@@ -94,17 +95,17 @@ private fun TestRow(t: TestReport) {
             Text(if (t.timeMs < 1) "<1 ms" else "${t.timeMs.roundToLong()} ms", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         if (!t.pass && !t.hidden) {
-            t.expected?.let { Text("Mong đợi: $it", fontFamily = JetBrainsMono, style = MaterialTheme.typography.bodySmall) }
-            t.actual?.let { Text("Nhận được: $it", fontFamily = JetBrainsMono, style = MaterialTheme.typography.bodySmall) }
+            t.expected?.let { Text("Mong đợi: $it", style = MaterialTheme.typography.bodySmall.mono()) }
+            t.actual?.let { Text("Nhận được: $it", style = MaterialTheme.typography.bodySmall.mono()) }
         }
-        t.error?.let { if (!t.pass) Text(it.take(400), fontFamily = JetBrainsMono, style = MaterialTheme.typography.bodySmall, color = f.onCoralContainer) }
+        t.error?.let { if (!t.pass) Text(it.take(400), style = MaterialTheme.typography.bodySmall.mono(), color = f.onCoralContainer) }
     }
 }
 
 @Composable
 private fun GradeCard(g: Grade) {
     val cs = MaterialTheme.colorScheme
-    Pushable(null, cs.secondaryContainer, RoundedCornerShape(24.dp), Modifier.fillMaxWidth()) {
+    Pushable(null, cs.secondaryContainer, RoundedCornerShape(16.dp), Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("Nhận xét code", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = cs.onSecondaryContainer)
             listOf("Đúng" to g.correctness, "Dễ đọc" to g.readability, "Thực hành tốt" to g.bestPractices, "Đúng chất ngôn ngữ" to g.idiomatic).forEach { (k, v) ->
