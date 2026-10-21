@@ -168,8 +168,8 @@ private fun CourseCard(item: CourseItem, modifier: Modifier, onClick: () -> Unit
         edge = cs.outlineVariant, border = BorderStroke(1.dp, cs.outlineVariant),
     ) {
         Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.shared("glyph-${c.id}").size(58.dp).background(t.accent, Tile), contentAlignment = Alignment.Center) {
-                Text(courseGlyph(c.id, c.title), color = t.onAccent, fontFamily = JetBrainsMono, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall, maxLines = 1)
+            Box(Modifier.shared("glyph-${c.id}").size(58.dp).background(t.container, Tile), contentAlignment = Alignment.Center) {
+                Text(courseGlyph(c.id, c.title), color = t.onContainer, fontFamily = JetBrainsMono, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall, maxLines = 1)
             }
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {

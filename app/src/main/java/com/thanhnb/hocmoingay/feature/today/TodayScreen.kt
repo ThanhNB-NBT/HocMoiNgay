@@ -119,8 +119,8 @@ private fun DayCard(ui: TodayViewModel.Ui, modifier: Modifier) {
             }
             LinearProgressIndicator(
                 progress = { (ui.doneMinutes.toFloat() / ui.dailyMinutes).coerceIn(0f, 1f) },
-                modifier = Modifier.fillMaxWidth().height(10.dp),
-                color = cs.onPrimaryContainer, trackColor = cs.onPrimaryContainer.copy(alpha = 0.15f), strokeCap = StrokeCap.Round,
+                modifier = Modifier.fillMaxWidth().height(8.dp),
+                color = LocalTrack.current.accent, trackColor = cs.onPrimaryContainer.copy(alpha = 0.15f), strokeCap = StrokeCap.Round,
             )
             Spacer(Modifier.height(14.dp))
             Text("${streakText(ui.streak)} · +${ui.xpToday} XP hôm nay", style = MaterialTheme.typography.bodyLarge, color = cs.onPrimaryContainer)
@@ -146,14 +146,15 @@ private fun PlanRow(p: Planned, modifier: Modifier, onClick: () -> Unit) {
     val content = @Composable {
         val (label, title, note) = describe(p.item)
         val cs = MaterialTheme.colorScheme
-        val face = if (track == null) cs.secondaryContainer else LocalTrack.current.container
-        val ink = if (track == null) cs.onSecondaryContainer else LocalTrack.current.onContainer
-        Pushable(onClick, face, RoundedCornerShape(16.dp), modifier.fillMaxWidth()) {
+        // thẻ trắng như mọi khối khác; chỉ dòng nhãn mang màu của mảng
+        val ink = cs.onSurface
+        val kicker = if (track == null) cs.onSurfaceVariant else LocalTrack.current.accent
+        Pushable(onClick, cs.surfaceContainerLowest, RoundedCornerShape(16.dp), modifier.fillMaxWidth()) {
             Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
-                    Text(label, style = MaterialTheme.typography.labelLarge, color = ink.copy(alpha = 0.8f))
+                    Text(label, style = MaterialTheme.typography.labelLarge, color = kicker)
                     Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = ink, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                    Text(note, style = MaterialTheme.typography.bodyMedium, color = ink)
+                    Text(note, style = MaterialTheme.typography.bodyMedium, color = cs.onSurfaceVariant)
                 }
                 Spacer(Modifier.width(12.dp))
                 Column(horizontalAlignment = Alignment.End) {

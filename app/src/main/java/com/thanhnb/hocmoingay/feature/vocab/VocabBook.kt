@@ -269,7 +269,7 @@ private fun Flashcards(vm: VocabViewModel, ui: VocabViewModel.Ui, refs: List<Str
             if (flipped) {
                 Text(v.meaningVi, style = MaterialTheme.typography.headlineSmall)
                 v.examples.forEach { ex ->
-                    Pushable({ tts?.speak(ex, owner) }, cs.surfaceContainerHigh, RoundedCornerShape(16.dp), Modifier.fillMaxWidth()) {
+                    Pushable({ tts?.speak(ex, owner) }, cs.surfaceContainerLowest, RoundedCornerShape(16.dp), Modifier.fillMaxWidth()) {
                         Text(ex, Modifier.padding(14.dp), style = MaterialTheme.typography.bodyLarge)
                     }
                 }

@@ -41,7 +41,7 @@ fun twoToneScheme(dark: Boolean): ColorScheme {
     val base = if (dark) {
         darkColorScheme(
             primary = Color(0xFFECEAE4), onPrimary = Color(0xFF121316),
-            primaryContainer = Color(0xFF26282C), onPrimaryContainer = Color(0xFFECEAE4),
+            primaryContainer = Color(0xFF1B1C20), onPrimaryContainer = Color(0xFFECEAE4),
             secondaryContainer = Color(0xFF26282C), onSecondaryContainer = Color(0xFFECEAE4),
             background = Color(0xFF121316), onBackground = Color(0xFFECEAE4),
             surface = Color(0xFF121316), onSurface = Color(0xFFECEAE4),
@@ -54,8 +54,9 @@ fun twoToneScheme(dark: Boolean): ColorScheme {
     } else {
         lightColorScheme(
             primary = Ink, onPrimary = Color.White,
-            primaryContainer = Color(0xFFEAE8E1), onPrimaryContainer = Ink,
-            secondaryContainer = Color(0xFFEAE8E1), onSecondaryContainer = Ink,
+            // khối nội dung: giấy trắng trên nền giấy ngà, Pushable tự thêm viền mảnh
+            primaryContainer = Color.White, onPrimaryContainer = Ink,
+            secondaryContainer = Color(0xFFEDEBE5), onSecondaryContainer = Ink,
             background = Paper, onBackground = Ink,
             surface = Paper, onSurface = Ink,
             surfaceVariant = Color(0xFFEDEBE5), onSurfaceVariant = Color(0xFF5A5F66),

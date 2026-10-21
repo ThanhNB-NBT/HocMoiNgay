@@ -65,7 +65,7 @@ fun edgeOf(face: Color) = lerp(face, Color.Black, 0.12f)
 
 /**
  * Khối bấm được, mặt phẳng: không gờ, không nảy. Bấm thì mặt sẫm đi một nấc và co 1%.
- * [edge] là màu viền mảnh 1dp (Transparent = không viền); [border] cho viền tự chọn.
+ * [edge] là màu viền mảnh 1dp, mặc định outlineVariant (Transparent = không viền); [border] cho viền tự chọn.
  * [onClick] null = khối tĩnh.
  */
 @Composable
@@ -74,7 +74,7 @@ fun Pushable(
     face: Color,
     shape: Shape,
     modifier: Modifier = Modifier,
-    edge: Color = Color.Transparent,
+    edge: Color = MaterialTheme.colorScheme.outlineVariant,
     border: BorderStroke? = null,
     enabled: Boolean = true,
     content: @Composable BoxScope.() -> Unit,
@@ -111,7 +111,7 @@ fun PushButton(
     contentColor: Color = MaterialTheme.colorScheme.onPrimary,
     enabled: Boolean = true,
     icon: ImageVector? = null,
-) = Pushable(onClick, color, RoundedCornerShape(14.dp), modifier, enabled = enabled) {
+) = Pushable(onClick, color, RoundedCornerShape(14.dp), modifier, edge = Color.Transparent, enabled = enabled) {
     Row(
         Modifier.align(Alignment.Center).heightIn(min = 52.dp).padding(horizontal = 22.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center,
@@ -137,7 +137,7 @@ fun TickUpNumber(target: Int, style: TextStyle, color: Color, modifier: Modifier
  * Hiện ra thì mặt trời nhô lên một lần rồi đứng yên.
  */
 @Composable
-fun Sunrise(modifier: Modifier = Modifier, color: Color = MaterialTheme.colorScheme.primary) {
+fun Sunrise(modifier: Modifier = Modifier, color: Color = MaterialTheme.colorScheme.onSurface) {
     val up = remember { Animatable(0f) }
     LaunchedEffect(Unit) { up.animateTo(1f, tween(700, easing = Settle)) }
     Canvas(modifier) {
@@ -145,14 +145,17 @@ fun Sunrise(modifier: Modifier = Modifier, color: Color = MaterialTheme.colorSch
         val stroke = w * 0.06f
         val horizon = size.height * 0.68f
         val r = w * 0.26f
-        val cy = horizon + r * (1 - up.value) * 0.6f
+        // mặt trời vàng như icon app, nhô quá nửa khỏi chân trời
+        val cy = horizon - r * 0.35f * up.value + r * (1 - up.value) * 0.6f
         clipRect(bottom = horizon) {
-            drawCircle(color, r, Offset(w / 2, cy))
+            drawCircle(SunGold, r, Offset(w / 2, cy))
         }
         drawLine(color, Offset(w * 0.12f, horizon + stroke), Offset(w * 0.88f, horizon + stroke), stroke, StrokeCap.Round)
         drawLine(color.copy(alpha = 0.45f), Offset(w * 0.28f, horizon + stroke * 3), Offset(w * 0.72f, horizon + stroke * 3), stroke, StrokeCap.Round)
     }
 }
+
+private val SunGold = Color(0xFFF2B33D)
 
 /** Hiện ra: trồi 6dp + rõ dần trong 280 ms, phần tử thứ [index] trễ 35 ms mỗi bậc. */
 fun Modifier.rise(index: Int = 0): Modifier = composed {

@@ -88,7 +88,7 @@ fun ProfileScreen(vm: ProfileViewModel, email: String?, onOpenSettings: () -> Un
             }
         }
         Section("Lịch học", Modifier.rise(3)) {
-            Heatmap(ui.heat, ui.months, cs.primary, cs.surfaceContainerHighest)
+            Heatmap(ui.heat, ui.months, LocalTrack.current.accent, cs.surfaceContainerHigh)
         }
         ProvideTrack(Track.ENGLISH) { Section("Tiếng Anh 7 ngày qua", Modifier.rise(4)) { StrandBars(ui.strands, ui.note) } }
         if (ui.courses.isNotEmpty()) Section("Chương đã thành thạo", Modifier.rise(5)) { ui.courses.forEach { CourseRow(it) } }

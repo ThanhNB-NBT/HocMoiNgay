@@ -62,7 +62,7 @@ fun VocabCard(c: Vocab, ctx: CardCtx) {
         SpeakerBar(c.word, autoPlay = ctx.active)
         Text(c.meaningVi, style = MaterialTheme.typography.titleLarge)
         c.examples.forEach { e ->
-            Pushable({ tts?.speak(e, owner) }, MaterialTheme.colorScheme.surfaceContainerHigh, RoundedCornerShape(16.dp), Modifier.fillMaxWidth()) {
+            Pushable({ tts?.speak(e, owner) }, MaterialTheme.colorScheme.surfaceContainerLowest, RoundedCornerShape(16.dp), Modifier.fillMaxWidth()) {
                 Text(e, Modifier.padding(14.dp), style = MaterialTheme.typography.bodyLarge)
             }
         }
@@ -217,7 +217,7 @@ fun SayRow(s: Say) {
     val tts = LocalTts.current
     val owner = remember { Any() }
     var vi by rememberSaveable(s.en) { mutableStateOf(false) }
-    Pushable({ tts?.speak(s.en, owner); vi = !vi }, MaterialTheme.colorScheme.surfaceContainerHigh, RoundedCornerShape(16.dp), Modifier.fillMaxWidth()) {
+    Pushable({ tts?.speak(s.en, owner); vi = !vi }, MaterialTheme.colorScheme.surfaceContainerLowest, RoundedCornerShape(16.dp), Modifier.fillMaxWidth()) {
         Column(Modifier.padding(14.dp)) {
             Text(s.en, style = MaterialTheme.typography.bodyLarge)
             if (vi && s.vi.isNotBlank()) Text(s.vi, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -230,7 +230,7 @@ private fun LineBubble(l: Turn.Line, onSpeak: () -> Unit) {
     var vi by rememberSaveable { mutableStateOf(false) }
     Column(Modifier.fillMaxWidth(0.85f)) {
         Text(l.who, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Pushable({ onSpeak(); vi = !vi }, MaterialTheme.colorScheme.surfaceContainerHigh, RoundedCornerShape(14.dp)) {
+        Pushable({ onSpeak(); vi = !vi }, MaterialTheme.colorScheme.surfaceContainerLowest, RoundedCornerShape(14.dp)) {
             Column(Modifier.padding(14.dp)) {
                 Text(l.text, style = MaterialTheme.typography.bodyLarge)
                 if (vi && l.vi.isNotBlank()) Text(l.vi, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)

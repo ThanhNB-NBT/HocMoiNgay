@@ -91,8 +91,8 @@ fun CourseScreen(vm: CourseViewModel, onBack: () -> Unit, onOpenLesson: (String)
             }
             item("head") {
                 Column(Modifier.padding(horizontal = 20.dp)) {
-                    Box(Modifier.size(72.dp).shared("glyph-${c.id}").background(t.accent, Tile), contentAlignment = Alignment.Center) {
-                        Text(courseGlyph(c.id, c.title), color = t.onAccent, fontFamily = JetBrainsMono, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                    Box(Modifier.size(72.dp).shared("glyph-${c.id}").background(t.container, Tile), contentAlignment = Alignment.Center) {
+                        Text(courseGlyph(c.id, c.title), color = t.onContainer, fontFamily = JetBrainsMono, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
                     }
                     Spacer(Modifier.height(16.dp))
                     Text(c.title, Modifier.shared("title-${c.id}"), style = MaterialTheme.typography.displaySmall)
