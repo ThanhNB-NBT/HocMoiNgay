@@ -23,6 +23,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -107,23 +108,24 @@ fun streakText(n: Int) = if (n == 0) "Chưa có chuỗi ngày" else "Chuỗi $n 
 @Composable
 private fun DayCard(ui: TodayViewModel.Ui, modifier: Modifier) {
     val cs = MaterialTheme.colorScheme
-    Pushable(null, cs.primaryContainer, RoundedCornerShape(18.dp), modifier.fillMaxWidth()) {
+    // khối mục tiêu ngày: khoảnh khắc chính của màn, tô đặc màu chính
+    Pushable(null, cs.primary, RoundedCornerShape(18.dp), modifier.fillMaxWidth(), edge = Color.Transparent) {
         Column(Modifier.padding(22.dp)) {
-            Text("Hôm nay", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = cs.onPrimaryContainer)
+            Text("Hôm nay", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = cs.onPrimary)
             Row(verticalAlignment = Alignment.Bottom) {
-                TickUpNumber(ui.doneMinutes, MaterialTheme.typography.displayLarge.copy(fontSize = 72.sp, fontWeight = FontWeight.Bold), cs.onPrimaryContainer)
+                TickUpNumber(ui.doneMinutes, MaterialTheme.typography.displayLarge.copy(fontSize = 72.sp, fontWeight = FontWeight.Bold), cs.onPrimary)
                 Text(
-                    "/${ui.dailyMinutes} phút", style = MaterialTheme.typography.headlineSmall, color = cs.onPrimaryContainer,
+                    "/${ui.dailyMinutes} phút", style = MaterialTheme.typography.headlineSmall, color = cs.onPrimary,
                     modifier = Modifier.padding(start = 6.dp, bottom = 14.dp),
                 )
             }
             LinearProgressIndicator(
                 progress = { (ui.doneMinutes.toFloat() / ui.dailyMinutes).coerceIn(0f, 1f) },
                 modifier = Modifier.fillMaxWidth().height(8.dp),
-                color = LocalTrack.current.accent, trackColor = cs.onPrimaryContainer.copy(alpha = 0.15f), strokeCap = StrokeCap.Round,
+                color = cs.onPrimary, trackColor = cs.onPrimary.copy(alpha = 0.3f), strokeCap = StrokeCap.Round,
             )
             Spacer(Modifier.height(14.dp))
-            Text("${streakText(ui.streak)} · +${ui.xpToday} XP hôm nay", style = MaterialTheme.typography.bodyLarge, color = cs.onPrimaryContainer)
+            Text("${streakText(ui.streak)} · +${ui.xpToday} XP hôm nay", style = MaterialTheme.typography.bodyLarge, color = cs.onPrimary)
         }
     }
 }

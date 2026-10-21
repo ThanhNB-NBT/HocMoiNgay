@@ -10,60 +10,63 @@ data class TrackColors(val accent: Color, val onAccent: Color, val container: Co
 
 data class TrackPalette(val code: TrackColors, val english: TrackColors)
 
-/** Mực: chữ chính và nút hành động chính ở chế độ sáng. */
-val Ink = Color(0xFF16181D)
+/** Mực xanh đậm: chữ chính ở chế độ sáng. */
+val Ink = Color(0xFF14213D)
 
-/** Giấy: nền chế độ sáng, chữ và nút chính ở chế độ tối. */
-val Paper = Color(0xFFF7F6F2)
+/** Nền sáng: trắng pha chút xanh trời; thẻ nội dung là trắng tinh nổi trên nó. */
+val Sky = Color(0xFFF3F7FF)
 
-// "Giấy mực": nền giấy, chữ mực, mỗi mảng một màu trầm. Không màu nào chỉ để trang trí.
-// Lập trình: xanh rừng; Tiếng Anh: xanh mực.
-val CodeLight = TrackColors(Color(0xFF2D6A4F), Color.White, Color(0xFFDCEBE2), Color(0xFF12372A))
-val CodeDark = TrackColors(Color(0xFF7CC4A0), Color(0xFF0E2219), Color(0xFF1E3A2F), Color(0xFFCFEBDC))
-val EnglishLight = TrackColors(Color(0xFF1F4F8F), Color.White, Color(0xFFDCE6F4), Color(0xFF0E2A52))
-val EnglishDark = TrackColors(Color(0xFF8DB4EA), Color(0xFF0B1A2E), Color(0xFF1C2F4A), Color(0xFFD6E4F7))
+/** Xanh dương tươi: nút chính, khối mục tiêu ngày. */
+val Azure = Color(0xFF2F5FF5)
+
+// "Bầu trời": nền xanh rất nhạt, thẻ trắng, xanh dương tươi làm màu chính.
+// Lập trình: xanh dương; Tiếng Anh: tím than.
+val CodeLight = TrackColors(Color(0xFF2F5BEA), Color.White, Color(0xFFE3EBFF), Color(0xFF1F3FB3))
+val CodeDark = TrackColors(Color(0xFF8FB0FF), Color(0xFF0B1530), Color(0xFF1F2D57), Color(0xFFDCE6FF))
+val EnglishLight = TrackColors(Color(0xFF6D4AD8), Color.White, Color(0xFFECE6FF), Color(0xFF3B2390))
+val EnglishDark = TrackColors(Color(0xFFB9A4FF), Color(0xFF1E1050), Color(0xFF2E2257), Color(0xFFECE6FF))
 // IDE — một accent amber cho cả hai mảng
 val AmberLight = TrackColors(Color(0xFFB45309), Color.White, Color(0xFFFEF3C7), Color(0xFF78350F))
 val AmberDark = TrackColors(Color(0xFFFBBF24), Color(0xFF451A03), Color(0xFF78350F), Color(0xFFFEF3C7))
 
-/** Màu phụ: đất nung cho câu sai và khoảnh khắc chuỗi ngày, xanh rừng cho câu đúng. */
+/** Màu phụ: đỏ cam cho câu sai và khoảnh khắc chuỗi ngày, xanh lá cho câu đúng. */
 data class FunColors(
     val coral: Color, val onCoral: Color, val coralContainer: Color, val onCoralContainer: Color,
     val mint: Color, val mintContainer: Color,
 )
 
-val FunLight = FunColors(Color(0xFFB9472F), Color.White, Color(0xFFF6E2DB), Color(0xFF5A1A0E), Color(0xFF2D6A4F), Color(0xFFDCEBE2))
-val FunDark = FunColors(Color(0xFFF08A6E), Color(0xFF2A0D05), Color(0xFF3D1E16), Color(0xFFF8D9CF), Color(0xFF7CC4A0), Color(0xFF1E3A2F))
+val FunLight = FunColors(Color(0xFFC73A22), Color.White, Color(0xFFFDE7E2), Color(0xFF6B1C0E), Color(0xFF12A06A), Color(0xFFDFF7EC))
+val FunDark = FunColors(Color(0xFFFF8A70), Color(0xFF2A0D05), Color(0xFF41201A), Color(0xFFFFDAD2), Color(0xFF4CD69A), Color(0xFF123A2A))
 
 fun twoToneScheme(dark: Boolean): ColorScheme {
     val c = if (dark) CodeDark else CodeLight
     val e = if (dark) EnglishDark else EnglishLight
     val base = if (dark) {
         darkColorScheme(
-            primary = Color(0xFFECEAE4), onPrimary = Color(0xFF121316),
-            primaryContainer = Color(0xFF1B1C20), onPrimaryContainer = Color(0xFFECEAE4),
-            secondaryContainer = Color(0xFF26282C), onSecondaryContainer = Color(0xFFECEAE4),
-            background = Color(0xFF121316), onBackground = Color(0xFFECEAE4),
-            surface = Color(0xFF121316), onSurface = Color(0xFFECEAE4),
-            surfaceVariant = Color(0xFF26282C), onSurfaceVariant = Color(0xFFA3A6AB),
-            outline = Color(0xFF6E7176), outlineVariant = Color(0xFF2E3034),
-            surfaceContainerLowest = Color(0xFF1B1C20), surfaceContainerLow = Color(0xFF17181B), // lowest làm mặt thẻ nên sáng hơn nền
-            surfaceContainer = Color(0xFF1E1F23), surfaceContainerHigh = Color(0xFF26282C),
-            surfaceContainerHighest = Color(0xFF2F3135),
+            primary = Color(0xFF7FA2FF), onPrimary = Color(0xFF0B1530),
+            primaryContainer = Color(0xFF171E2D), onPrimaryContainer = Color(0xFFE6ECF8),
+            secondaryContainer = Color(0xFF22305A), onSecondaryContainer = Color(0xFFDCE6FF),
+            background = Color(0xFF0F1420), onBackground = Color(0xFFE6ECF8),
+            surface = Color(0xFF0F1420), onSurface = Color(0xFFE6ECF8),
+            surfaceVariant = Color(0xFF222A3D), onSurfaceVariant = Color(0xFF9AA8C4),
+            outline = Color(0xFF64708A), outlineVariant = Color(0xFF263049),
+            surfaceContainerLowest = Color(0xFF171E2D), surfaceContainerLow = Color(0xFF131927), // lowest làm mặt thẻ nên sáng hơn nền
+            surfaceContainer = Color(0xFF1A2133), surfaceContainerHigh = Color(0xFF222A3D),
+            surfaceContainerHighest = Color(0xFF2B3449),
         )
     } else {
         lightColorScheme(
-            primary = Ink, onPrimary = Color.White,
-            // khối nội dung: giấy trắng trên nền giấy ngà, Pushable tự thêm viền mảnh
+            primary = Azure, onPrimary = Color.White,
+            // khối nội dung: thẻ trắng trên nền xanh nhạt, Pushable tự thêm viền mảnh
             primaryContainer = Color.White, onPrimaryContainer = Ink,
-            secondaryContainer = Color(0xFFEDEBE5), onSecondaryContainer = Ink,
-            background = Paper, onBackground = Ink,
-            surface = Paper, onSurface = Ink,
-            surfaceVariant = Color(0xFFEDEBE5), onSurfaceVariant = Color(0xFF5A5F66),
-            outline = Color(0xFF8A8E94), outlineVariant = Color(0xFFE0DED7),
-            surfaceContainerLowest = Color.White, surfaceContainerLow = Color(0xFFF1F0EB),
-            surfaceContainer = Color(0xFFECEAE4), surfaceContainerHigh = Color(0xFFE4E2DB),
-            surfaceContainerHighest = Color(0xFFDBD9D1),
+            secondaryContainer = Color(0xFFE3EBFF), onSecondaryContainer = Color(0xFF1F3FB3),
+            background = Sky, onBackground = Ink,
+            surface = Sky, onSurface = Ink,
+            surfaceVariant = Color(0xFFE3EBFA), onSurfaceVariant = Color(0xFF4E5D7C),
+            outline = Color(0xFF75839F), outlineVariant = Color(0xFFDCE4F2),
+            surfaceContainerLowest = Color.White, surfaceContainerLow = Color(0xFFEAF0FC),
+            surfaceContainer = Color(0xFFE3EBFA), surfaceContainerHigh = Color(0xFFD9E2F5),
+            surfaceContainerHighest = Color(0xFFCDD8EE),
         )
     }
     return base.copy(
