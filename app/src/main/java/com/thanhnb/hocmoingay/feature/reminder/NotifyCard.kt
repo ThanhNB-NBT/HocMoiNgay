@@ -1,5 +1,19 @@
 package com.thanhnb.hocmoingay.feature.reminder
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material3.Icon
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
+import com.thanhnb.hocmoingay.core.ui.Tile
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -13,7 +27,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -41,16 +54,31 @@ fun NotifyCard(reminders: List<String>, modifier: Modifier = Modifier) {
     if (granted) return
     val cs = MaterialTheme.colorScheme
     Pushable(null, cs.surfaceContainerLowest, RoundedCornerShape(16.dp), modifier.padding(top = 14.dp).fillMaxWidth()) {
-        Column(Modifier.padding(18.dp)) {
-            Text("Bật thông báo nhắc học", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            Text(
-                "App nhắc lúc ${reminders.joinToString(", ")} nếu hôm đó bạn chưa học.",
-                style = MaterialTheme.typography.bodyMedium, color = cs.onSurfaceVariant,
-            )
-            TextButton(onClick = {
-                if (denied) ctx.startActivity(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, ctx.packageName))
-                else ask.launch(Manifest.permission.POST_NOTIFICATIONS)
-            }) { Text(if (denied) "Mở cài đặt thông báo" else "Bật thông báo") }
+        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.Top) {
+            Box(Modifier.size(48.dp).background(cs.secondaryContainer, Tile), contentAlignment = Alignment.Center) {
+                Icon(Icons.Filled.Notifications, null, tint = cs.onSecondaryContainer)
+            }
+            Spacer(Modifier.width(14.dp))
+            Column(Modifier.weight(1f)) {
+                Text("Bật nhắc học", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text(
+                    "App nhắc lúc ${reminders.joinToString(", ")} nếu hôm đó bạn chưa học.",
+                    style = MaterialTheme.typography.bodyMedium, color = cs.onSurfaceVariant,
+                )
+                Spacer(Modifier.height(10.dp))
+                Pushable(
+                    {
+                        if (denied) ctx.startActivity(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, ctx.packageName))
+                        else ask.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    },
+                    cs.secondaryContainer, CircleShape, edge = Color.Transparent,
+                ) {
+                    Text(
+                        if (denied) "Mở cài đặt thông báo" else "Bật thông báo", Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                        style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold, color = cs.onSecondaryContainer,
+                    )
+                }
+            }
         }
     }
 }

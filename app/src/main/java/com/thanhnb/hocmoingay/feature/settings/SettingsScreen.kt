@@ -1,5 +1,6 @@
 package com.thanhnb.hocmoingay.feature.settings
 
+import com.thanhnb.hocmoingay.core.ui.PillTabs
 import android.os.Build
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
@@ -27,9 +28,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.InputChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -150,11 +148,13 @@ fun SettingsScreen(
             }
             Section("Tiếng Anh") {
                 Hint(s.englishLevel?.let { "Trình độ hiện tại: $it." } ?: "Bạn chưa làm bài xếp lớp.")
-                PushButton(if (s.englishLevel == null) "Làm bài xếp lớp" else "Làm lại bài xếp lớp", onPlacement, Modifier.fillMaxWidth())
+                PushButton(if (s.englishLevel == null) "Làm bài xếp lớp" else "Làm lại bài xếp lớp", onPlacement, Modifier.fillMaxWidth(),
+                    color = MaterialTheme.colorScheme.secondaryContainer, contentColor = MaterialTheme.colorScheme.onSecondaryContainer,)
             }
             Section("Tài khoản") {
                 Hint(email ?: "Chưa đăng nhập")
-                PushButton("Đổi mật khẩu", { pwDone = null; changingPw = true }, Modifier.fillMaxWidth())
+                PushButton("Đổi mật khẩu", { pwDone = null; changingPw = true }, Modifier.fillMaxWidth(),
+                    color = MaterialTheme.colorScheme.secondaryContainer, contentColor = MaterialTheme.colorScheme.onSecondaryContainer,)
                 pwDone?.let { Hint(it) }
             }
             Section("Phiên bản") { UpdateCheck() }
@@ -183,18 +183,9 @@ private fun Section(text: String, content: @Composable () -> Unit) =
 private fun Hint(text: String) =
     Text(text, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun <T> Segmented(options: List<Pair<T, String>>, selected: T, onSelect: (T) -> Unit, enabled: (T) -> Boolean = { true }) {
-    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-        options.forEachIndexed { i, (v, label) ->
-            SegmentedButton(
-                selected = v == selected, onClick = { onSelect(v) }, enabled = enabled(v),
-                shape = SegmentedButtonDefaults.itemShape(i, options.size),
-            ) { Text(label, maxLines = 1, overflow = TextOverflow.Ellipsis) }
-        }
-    }
-}
+private fun <T> Segmented(options: List<Pair<T, String>>, selected: T, onSelect: (T) -> Unit, enabled: (T) -> Boolean = { true }) =
+    PillTabs(options.map { it.second }, options.indexOfFirst { it.first == selected }, { onSelect(options[it].first) }, enabled = { enabled(options[it].first) })
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

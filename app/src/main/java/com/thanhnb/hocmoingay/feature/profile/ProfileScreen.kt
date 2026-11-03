@@ -1,5 +1,18 @@
 package com.thanhnb.hocmoingay.feature.profile
 
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.material3.VerticalDivider
+import com.thanhnb.hocmoingay.core.ui.tabInsets
+import com.thanhnb.hocmoingay.core.ui.BarSpace
+import com.thanhnb.hocmoingay.core.ui.lift
+import com.thanhnb.hocmoingay.core.ui.ThinProgress
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.graphics.vector.ImageVector
+import com.thanhnb.hocmoingay.core.ui.BoltGold
+import com.thanhnb.hocmoingay.core.ui.BoltIcon
+import com.thanhnb.hocmoingay.core.ui.CalendarIcon
+import com.thanhnb.hocmoingay.core.ui.FlameIcon
+import com.thanhnb.hocmoingay.core.ui.FlameOrange
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -56,13 +69,11 @@ import kotlin.math.roundToInt
 fun ProfileScreen(vm: ProfileViewModel, email: String?, onOpenSettings: () -> Unit) {
     val ui by vm.ui.collectAsStateWithLifecycle()
     val cs = MaterialTheme.colorScheme
-    val fun_ = LocalFun.current
-    val card = BorderStroke(1.dp, cs.outlineVariant)
-    Column(Modifier.fillMaxSize().safeDrawingPadding().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)) {
+    Column(Modifier.fillMaxSize().tabInsets().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)) {
         ScreenHeader("Hồ sơ", modifier = Modifier.rise(0), inset = 0.dp)
         Row(Modifier.rise(1), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(84.dp).background(cs.primaryContainer, Tile), contentAlignment = Alignment.Center) {
-                Text(email?.take(1)?.uppercase() ?: "?", style = MaterialTheme.typography.headlineMedium, color = cs.onPrimaryContainer)
+            Box(Modifier.size(72.dp).background(cs.primary, CircleShape), contentAlignment = Alignment.Center) {
+                Text(email?.take(1)?.uppercase() ?: "?", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = cs.onPrimary)
             }
             Spacer(Modifier.width(16.dp))
             Column(Modifier.weight(1f)) {
@@ -71,31 +82,26 @@ fun ProfileScreen(vm: ProfileViewModel, email: String?, onOpenSettings: () -> Un
             }
         }
         Spacer(Modifier.height(24.dp))
-        // coral: khoảnh khắc mạnh duy nhất của màn — chuỗi ngày
-        Pushable(null, fun_.coralContainer, RoundedCornerShape(16.dp), Modifier.fillMaxWidth().rise(2), edge = fun_.coral) {
-            Row(Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text("Chuỗi ngày", style = MaterialTheme.typography.titleMedium, color = fun_.onCoralContainer)
-                    Row(verticalAlignment = Alignment.Bottom) {
-                        TickUpNumber(ui.streak, MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Bold), fun_.onCoralContainer)
-                        Text(" ngày", style = MaterialTheme.typography.titleLarge, color = fun_.onCoralContainer, modifier = Modifier.padding(bottom = 8.dp))
-                    }
-                }
-                Column(horizontalAlignment = Alignment.End) {
-                    Text("${ui.totalXp} XP", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = fun_.onCoralContainer)
-                    Text("${ui.activeDays} ngày có học", style = MaterialTheme.typography.bodyMedium, color = fun_.onCoralContainer)
-                }
-            }
+        // ba số liệu chung một dải, ngăn bằng vạch; icon mang màu, số 0 không tô đỏ để khỏi trông như báo lỗi
+        val strip = RoundedCornerShape(20.dp)
+        Row(
+            Modifier.fillMaxWidth().height(IntrinsicSize.Min).rise(2).lift(strip).background(cs.surfaceContainerLowest, strip).padding(vertical = 16.dp),
+        ) {
+            StatCell(FlameIcon, FlameOrange, ui.streak, "ngày liên tiếp", Modifier.weight(1f))
+            VerticalDivider(color = cs.outlineVariant)
+            StatCell(BoltIcon, BoltGold, ui.totalXp, "tổng XP", Modifier.weight(1f))
+            VerticalDivider(color = cs.outlineVariant)
+            StatCell(CalendarIcon, cs.primary, ui.activeDays, "ngày có học", Modifier.weight(1f))
         }
         Section("Lịch học", Modifier.rise(3)) {
             Heatmap(ui.heat, ui.months, LocalTrack.current.accent, cs.surfaceContainerHigh)
         }
         ProvideTrack(Track.ENGLISH) { Section("Tiếng Anh 7 ngày qua", Modifier.rise(4)) { StrandBars(ui.strands, ui.note) } }
         if (ui.courses.isNotEmpty()) Section("Chương đã thành thạo", Modifier.rise(5)) { ui.courses.forEach { CourseRow(it) } }
-        Spacer(Modifier.height(14.dp))
+        Spacer(Modifier.height(24.dp))
         Pushable(
-            onOpenSettings, cs.surfaceContainerLowest, RoundedCornerShape(16.dp), Modifier.fillMaxWidth().rise(6),
-            edge = cs.outlineVariant, border = card,
+            onOpenSettings, cs.surfaceContainerLowest, RoundedCornerShape(20.dp), Modifier.fillMaxWidth().lift(RoundedCornerShape(20.dp)).rise(6),
+            edge = Color.Transparent,
         ) {
             Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.size(48.dp).background(cs.secondaryContainer, Tile), contentAlignment = Alignment.Center) {
@@ -109,20 +115,33 @@ fun ProfileScreen(vm: ProfileViewModel, email: String?, onOpenSettings: () -> Un
                 Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = cs.onSurfaceVariant)
             }
         }
-        Spacer(Modifier.height(28.dp))
+        BarSpace()
     }
 }
 
 @Composable
+private fun StatCell(icon: ImageVector, tint: Color, value: Int, label: String, modifier: Modifier) {
+    val cs = MaterialTheme.colorScheme
+    Column(modifier.semantics(mergeDescendants = true) {}, horizontalAlignment = Alignment.CenterHorizontally) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(icon, null, tint = if (value == 0) cs.outline else tint, modifier = Modifier.size(20.dp))
+            Spacer(Modifier.width(4.dp))
+            TickUpNumber(value, MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold), cs.onSurface)
+        }
+        Text(label, style = MaterialTheme.typography.labelMedium, color = cs.onSurfaceVariant, maxLines = 1)
+    }
+}
+
+/** Một mục: tiêu đề nằm ngoài, nội dung trong một mặt phẳng nổi nhẹ (không viền). */
+@Composable
 private fun Section(title: String, modifier: Modifier, content: @Composable ColumnScope.() -> Unit) {
     val cs = MaterialTheme.colorScheme
-    Spacer(Modifier.height(14.dp))
-    Pushable(null, cs.surfaceContainerLowest, RoundedCornerShape(16.dp), modifier.fillMaxWidth(), edge = cs.outlineVariant, border = BorderStroke(1.dp, cs.outlineVariant)) {
-        Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            content()
-        }
-    }
+    val shape = RoundedCornerShape(20.dp)
+    Text(title, modifier.padding(top = 24.dp, bottom = 10.dp), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+    Column(
+        modifier.fillMaxWidth().lift(shape).background(cs.surfaceContainerLowest, shape).padding(18.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp), content = content,
+    )
 }
 
 /** Lịch học kiểu GitHub: nhãn tháng trên đầu, T2/T4/T6 bên trái, chú thích Ít → Nhiều; ô co theo bề ngang màn. */
@@ -196,13 +215,10 @@ private fun StrandBars(m: Map<String, Double>, note: String?) {
 private fun CourseRow(c: ProfileViewModel.CourseLine) = ProvideTrack(if (c.track == "english") Track.ENGLISH else Track.CODE) {
     val t = LocalTrack.current
     Column {
-        Row {
-            Text(c.title, Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
-            Text("${c.stats.mastered}/${c.stats.chapters} chương", style = MaterialTheme.typography.labelLarge)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(c.title, Modifier.weight(1f), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text("${c.stats.mastered}/${c.stats.chapters} chương", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        LinearProgressIndicator(
-            progress = { c.stats.masteredPct / 100f }, modifier = Modifier.fillMaxWidth().padding(top = 6.dp).height(8.dp),
-            color = t.accent, trackColor = t.container, strokeCap = StrokeCap.Round,
-        )
+        ThinProgress(c.stats.masteredPct / 100f, t.accent, Modifier.fillMaxWidth().padding(top = 6.dp), track = t.container)
     }
 }

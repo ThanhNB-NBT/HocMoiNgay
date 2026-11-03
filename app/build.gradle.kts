@@ -113,6 +113,7 @@ dependencies {
     implementation("androidx.profileinstaller:profileinstaller:1.4.1")
     implementation(platform("androidx.compose:compose-bom:2026.09.00"))
     implementation("androidx.compose.material3:material3")
+    implementation("dev.chrisbanes.haze:haze-glass:2.1.0") // thanh tab liquid glass
     implementation("androidx.compose.material:material-icons-core:1.7.8")
     implementation("androidx.compose.ui:ui-tooling-preview")
     debugImplementation("androidx.compose.ui:ui-tooling")

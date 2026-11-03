@@ -1,5 +1,21 @@
 package com.thanhnb.hocmoingay.feature.learn
 
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.ui.unit.sp
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import com.thanhnb.hocmoingay.core.ui.BarSpace
+import com.thanhnb.hocmoingay.core.ui.tabInsets
+import com.thanhnb.hocmoingay.core.ui.lift
+import com.thanhnb.hocmoingay.core.ui.BookIcon
+import com.thanhnb.hocmoingay.core.ui.PillTabs
+import com.thanhnb.hocmoingay.core.ui.Skeleton
+import com.thanhnb.hocmoingay.core.ui.ThinProgress
+import androidx.compose.ui.unit.Dp
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -17,16 +33,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -101,8 +113,22 @@ fun courseGlyph(id: String, title: String) = when (id) {
     else -> title.filter { it.isLetterOrDigit() }.take(2).lowercase()
 }
 
-/** Tab Học: chọn mảng Lập trình / Tiếng Anh ở đầu màn, rồi danh sách khoá kèm tiến độ; ô ký hiệu + tiêu đề bay sang màn đề cương. */
-@OptIn(ExperimentalMaterial3Api::class)
+/** Ô ký hiệu của khoá (py, js, Aa...) tô màu của mảng hiện tại; dùng ở thẻ khoá, đề cương và Hôm nay. */
+@Composable
+fun GlyphTile(courseId: String, title: String, size: Dp, modifier: Modifier = Modifier) {
+    val t = LocalTrack.current
+    Box(modifier.size(size).background(t.container, Tile), contentAlignment = Alignment.Center) {
+        Text(
+            courseGlyph(courseId, title), color = t.onContainer, fontFamily = JetBrainsMono, fontWeight = FontWeight.Bold, maxLines = 1,
+            style = if (size >= 64.dp) MaterialTheme.typography.titleMedium else MaterialTheme.typography.titleSmall,
+        )
+    }
+}
+
+/**
+ * Tab Học: chọn mảng ở đầu màn; khoá đang học (hoặc khoá gợi ý bắt đầu) là MỘT khối màu lớn,
+ * các khoá còn lại gom trong một mặt phẳng ngăn bằng vạch. Ô ký hiệu + tiêu đề bay sang màn đề cương.
+ */
 @Composable
 fun LearnScreen(
     vm: LearnViewModel, englishLevel: String?, onOpenCourse: (String) -> Unit, onPlacement: () -> Unit, onOpenVocab: (String) -> Unit,
@@ -110,80 +136,132 @@ fun LearnScreen(
     val list = vm.courses.collectAsStateWithLifecycle().value
     var tab by rememberSaveable { mutableIntStateOf(0) }
     when {
-        list == null -> Box(Modifier.fillMaxSize())
+        list == null -> Skeleton(Modifier.tabInsets())
         list.isEmpty() -> Placeholder("Chưa có khoá học", "Giáo trình được tải về khi có mạng. Mở lại app sau khi kết nối.")
         else -> {
             val groups = groupCourses(list) { it.course.track }
             val (label, items) = groups[tab.coerceIn(0, groups.lastIndex)]
             val track = if (items.first().course.track == "code") Track.CODE else Track.ENGLISH
-            LazyColumn(
-                Modifier.fillMaxSize().safeDrawingPadding(),
-                contentPadding = PaddingValues(bottom = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                item(key = "header") { ScreenHeader("Học", subtitle = "${list.size} khoá · chọn một khoá để xem lộ trình") }
-                if (groups.size > 1) item(key = "tabs") {
-                    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
-                        groups.forEachIndexed { i, (l, cs) ->
-                            SegmentedButton(
-                                selected = l == label, onClick = { tab = i },
-                                shape = SegmentedButtonDefaults.itemShape(i, groups.size),
-                            ) { Text("$l · ${cs.size}", maxLines = 1) }
-                        }
+            val featured = featuredCourse(items)
+            val rest = items.filter { it !== featured }
+            ProvideTrack(track) {
+                LazyColumn(Modifier.fillMaxSize().tabInsets()) {
+                    item(key = "header") { ScreenHeader("Học") }
+                    if (groups.size > 1) item(key = "tabs") {
+                        PillTabs(groups.map { (l, cs) -> "$l · ${cs.size}" }, groups.indexOfFirst { it.first == label }, { tab = it }, Modifier.padding(horizontal = 20.dp))
                     }
-                }
-                if (track == Track.ENGLISH) {
-                    item(key = "placement") { ProvideTrack(track) { PlacementCard(englishLevel, onPlacement) } }
-                    item(key = "vocab") { ProvideTrack(track) { VocabEntryCard { onOpenVocab(ENGLISH_COURSE) } } }
-                }
-                itemsIndexed(items, key = { _, it -> it.course.id }) { i, item ->
-                    ProvideTrack(track) { CourseCard(item, Modifier.rise(i)) { onOpenCourse(item.course.id) } }
+                    if (track == Track.ENGLISH) item(key = "placement") { PlacementCard(englishLevel, onPlacement) }
+                    if (featured != null) item(key = "feat-${featured.course.id}") {
+                        FeaturedCourse(featured, Modifier.padding(start = 20.dp, end = 20.dp, top = 16.dp).rise(0)) { onOpenCourse(featured.course.id) }
+                    }
+                    if (track == Track.ENGLISH) item(key = "vocab") { VocabRow(Modifier.rise(1)) { onOpenVocab(ENGLISH_COURSE) } }
+                    if (rest.isNotEmpty()) {
+                        item(key = "sec") {
+                            Row(Modifier.padding(start = 20.dp, end = 20.dp, top = 24.dp, bottom = 10.dp), verticalAlignment = Alignment.Bottom) {
+                                Text(if (featured == null) "Tất cả khoá" else "Các khoá khác", Modifier.weight(1f), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                                Text("${rest.size}", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                        item(key = "group") { CourseGroup(rest, Modifier.padding(horizontal = 20.dp).rise(2), onOpenCourse) }
+                    }
+                    item(key = "bar") { BarSpace() }
                 }
             }
         }
     }
 }
 
-@Composable
-private fun VocabEntryCard(onClick: () -> Unit) {
-    val t = LocalTrack.current
-    Pushable(onClick, t.accent, RoundedCornerShape(16.dp), Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
-        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text("Sổ từ vựng", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = t.onAccent)
-                Text("Mọi từ theo cấp A1–C1 · nghe phát âm · học thẻ lật", style = MaterialTheme.typography.bodyMedium, color = t.onAccent)
-            }
-            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = t.onAccent)
-        }
-    }
-}
+/** Khoá nên hiện nổi bật: đang học dở nhiều nhất; chưa học khoá nào thì khoá đầu tiên đã có bài. */
+fun featuredCourse(items: List<CourseItem>): CourseItem? =
+    items.filter { it.stats.done in 1 until it.stats.ready }.maxByOrNull { it.stats.done }
+        ?: items.firstOrNull { it.stats.done == 0 && it.stats.ready > 0 }
 
 @Composable
-private fun CourseCard(item: CourseItem, modifier: Modifier, onClick: () -> Unit) {
+private fun FeaturedCourse(item: CourseItem, modifier: Modifier, onClick: () -> Unit) {
     val c = item.course
+    val s = item.stats
+    val t = LocalTrack.current
+    val ink = t.onAccent
+    val shape = RoundedCornerShape(22.dp)
+    Pushable(onClick, t.accent, shape, modifier.fillMaxWidth().lift(shape), edge = Color.Transparent) {
+        Box {
+            // ký hiệu khoá khổng lồ, mờ, tràn ra góc phải dưới
+            Text(
+                courseGlyph(c.id, c.title), Modifier.align(Alignment.BottomEnd).offset(x = 6.dp, y = 22.dp),
+                color = ink.copy(alpha = 0.14f), fontFamily = JetBrainsMono, fontWeight = FontWeight.Bold, fontSize = 92.sp, maxLines = 1,
+            )
+            Column(Modifier.padding(18.dp)) {
+                Text(if (s.done > 0) "ĐANG HỌC" else "GỢI Ý BẮT ĐẦU", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = ink.copy(alpha = 0.82f))
+                Text(c.title, Modifier.padding(top = 4.dp, bottom = 2.dp), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(if (s.done > 0) "${s.done}/${s.ready} bài · ${s.masteredPct}% chương thành thạo" else "${s.ready} bài sẵn sàng", style = MaterialTheme.typography.bodySmall, color = ink.copy(alpha = 0.85f))
+                ThinProgress(s.done.toFloat() / s.ready.coerceAtLeast(1), ink, Modifier.padding(vertical = 14.dp).fillMaxWidth(0.82f), track = ink.copy(alpha = 0.25f))
+                Row(
+                    Modifier.background(ink, CircleShape).padding(start = 14.dp, end = 10.dp, top = 8.dp, bottom = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(if (s.done > 0) "Học tiếp" else "Bắt đầu", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = t.accent)
+                    Icon(Icons.AutoMirrored.Filled.ArrowForward, null, tint = t.accent, modifier = Modifier.padding(start = 6.dp).size(16.dp))
+                }
+            }
+        }
+    }
+}
+
+/** Các khoá còn lại: một mặt phẳng, mỗi khoá một dòng, ngăn bằng vạch mảnh. */
+@Composable
+private fun CourseGroup(items: List<CourseItem>, modifier: Modifier, onOpen: (String) -> Unit) {
+    val cs = MaterialTheme.colorScheme
+    val shape = RoundedCornerShape(20.dp)
+    Column(modifier.fillMaxWidth().lift(shape).clip(shape).background(cs.surfaceContainerLowest)) {
+        items.forEachIndexed { i, item ->
+            if (i > 0) HorizontalDivider(Modifier.padding(start = 64.dp), thickness = 1.dp, color = cs.outlineVariant)
+            CourseRow(item) { onOpen(item.course.id) }
+        }
+    }
+}
+
+@Composable
+private fun CourseRow(item: CourseItem, onClick: () -> Unit) {
+    val c = item.course
+    val s = item.stats
+    val cs = MaterialTheme.colorScheme
+    Pushable(onClick, cs.surfaceContainerLowest, RectangleShape, Modifier.fillMaxWidth(), edge = Color.Transparent) {
+        Row(Modifier.padding(horizontal = 14.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+            GlyphTile(c.id, c.title, 38.dp, Modifier.shared("glyph-${c.id}"))
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(c.title, Modifier.shared("title-${c.id}"), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(
+                    when {
+                        s.ready == 0 -> "Bài đang được soạn"
+                        s.done == 0 -> "${s.ready} bài"
+                        else -> "${s.done}/${s.ready} bài"
+                    },
+                    style = MaterialTheme.typography.bodySmall, color = cs.onSurfaceVariant,
+                )
+            }
+            if (s.ready > 0) Text(
+                "${s.done * 100 / s.ready}%", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold,
+                color = if (s.done > 0) LocalTrack.current.accent else cs.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun VocabRow(modifier: Modifier, onClick: () -> Unit) {
     val t = LocalTrack.current
     val cs = MaterialTheme.colorScheme
-    Pushable(
-        onClick, cs.surfaceContainerLowest, RoundedCornerShape(16.dp), modifier.padding(horizontal = 20.dp).fillMaxWidth(),
-        edge = cs.outlineVariant, border = BorderStroke(1.dp, cs.outlineVariant),
-    ) {
+    val shape = RoundedCornerShape(18.dp)
+    Pushable(onClick, cs.surfaceContainerLowest, shape, modifier.padding(start = 20.dp, end = 20.dp, top = 12.dp).fillMaxWidth(), edge = cs.outlineVariant) {
         Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.shared("glyph-${c.id}").size(58.dp).background(t.container, Tile), contentAlignment = Alignment.Center) {
-                Text(courseGlyph(c.id, c.title), color = t.onContainer, fontFamily = JetBrainsMono, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall, maxLines = 1)
+            Box(Modifier.size(38.dp).background(t.container, Tile), contentAlignment = Alignment.Center) {
+                Icon(BookIcon, null, tint = t.onContainer, modifier = Modifier.size(20.dp))
             }
-            Spacer(Modifier.width(14.dp))
+            Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
-                Text(c.title, Modifier.shared("title-${c.id}"), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Spacer(Modifier.height(2.dp))
-                Text(c.description, style = MaterialTheme.typography.bodySmall, color = cs.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
-            val s = item.stats
-            Spacer(Modifier.height(8.dp))
-            Text(
-                if (s.ready == 0) "Bài đang được soạn"
-                else if (s.done == 0) "Chưa học bài nào · ${s.ready} bài sẵn sàng"
-                else "${s.done}/${s.ready} bài · ${s.masteredPct}% chương thành thạo",
-                style = MaterialTheme.typography.labelMedium, color = t.accent, fontWeight = FontWeight.SemiBold,
-            )
+                Text("Sổ từ vựng", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                Text("Từ theo cấp A1–C1 · nghe phát âm · thẻ lật", style = MaterialTheme.typography.bodySmall, color = cs.onSurfaceVariant)
             }
             Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = t.accent)
         }
@@ -195,12 +273,12 @@ private fun PlacementCard(level: String?, onClick: () -> Unit) {
     val t = LocalTrack.current
     if (level != null) {
         Text(
-            "Trình độ của bạn: $level · làm lại trong Cài đặt", Modifier.padding(horizontal = 20.dp),
+            "Trình độ của bạn: $level · làm lại trong Cài đặt", Modifier.padding(start = 20.dp, end = 20.dp, top = 14.dp),
             style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         return
     }
-    Pushable(onClick, t.container, RoundedCornerShape(16.dp), Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+    Pushable(onClick, t.container, RoundedCornerShape(18.dp), Modifier.padding(start = 20.dp, end = 20.dp, top = 16.dp).fillMaxWidth(), edge = Color.Transparent) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text("Chưa biết bắt đầu từ cấp nào?", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = t.onContainer)
             Text("Làm bài xếp lớp khoảng 10 phút để app chọn trình độ cho bạn.", style = MaterialTheme.typography.bodyMedium, color = t.onContainer)

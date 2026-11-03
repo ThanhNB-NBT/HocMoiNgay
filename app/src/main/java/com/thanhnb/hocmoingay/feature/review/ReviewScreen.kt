@@ -1,5 +1,18 @@
 package com.thanhnb.hocmoingay.feature.review
 
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.sp
+import com.thanhnb.hocmoingay.core.theme.JetBrainsMono
+import com.thanhnb.hocmoingay.core.ui.tabInsets
+import com.thanhnb.hocmoingay.core.ui.barPadding
+import com.thanhnb.hocmoingay.core.theme.LocalTrackPalette
+import com.thanhnb.hocmoingay.core.ui.Skeleton
+import com.thanhnb.hocmoingay.core.ui.Tile
+import com.thanhnb.hocmoingay.core.ui.rise
+import com.thanhnb.hocmoingay.feature.ScreenHeader
+import com.thanhnb.hocmoingay.feature.today.REVIEW_SECONDS
+import androidx.compose.material3.Icon
 import com.thanhnb.hocmoingay.core.log.DailyLogRepo
 import com.thanhnb.hocmoingay.core.log.MinuteMeter
 import com.thanhnb.hocmoingay.core.review.MINUTE_MS
@@ -128,17 +141,82 @@ class ReviewViewModel(
 fun ReviewScreen(vm: ReviewViewModel, online: Boolean, api: CodeApi, icon: ImageVector) {
     val ui = vm.ui.collectAsStateWithLifecycle().value
     val next = vm.nextDue.collectAsStateWithLifecycle().value
+    // mở tab không ném thẳng vào câu hỏi: xem tổng quan trước, bấm "Bắt đầu ôn" mới vào phiên
+    var started by rememberSaveable { mutableStateOf(false) }
     when {
-        ui.loading -> Box(Modifier.fillMaxSize())
+        ui.loading -> Skeleton(Modifier.tabInsets(), rows = 2)
         ui.items.isEmpty() -> Placeholder(
             "Chưa có thẻ cần ôn",
             next?.let { "Thẻ tiếp theo đến hạn ${dueText(it)}." } ?: "Học xong bài nào, thẻ ôn của bài đó sẽ được xếp lịch và hiện ở đây.",
             icon = icon,
         )
-        ui.pos >= ui.items.size -> Finished(ui.items.size, vm::reload)
+        ui.pos >= ui.items.size -> Finished(ui.items.size) { started = false; vm.reload() }
+        !started && ui.pos == 0 -> Intro(ui.items, icon) { started = true }
         else -> Session(ui, vm, online, api)
     }
 }
+
+/** Tổng quan trước phiên ôn: một con số lớn làm trọng tâm, thanh chia tỉ lệ theo mảng, 3 bước, nút ở đáy. */
+@Composable
+private fun Intro(items: List<ReviewItem>, icon: ImageVector, onStart: () -> Unit) {
+    val cs = MaterialTheme.colorScheme
+    val type = MaterialTheme.typography
+    val en = items.count { it.card.track == "english" }
+    val code = items.size - en
+    val minutes = (items.size * REVIEW_SECONDS + 59) / 60
+    val palette = LocalTrackPalette.current
+    Column(Modifier.fillMaxSize().tabInsets().barPadding().padding(horizontal = 20.dp)) {
+        Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+            ScreenHeader("Ôn tập", inset = 0.dp)
+            Text(
+                "${items.size}", Modifier.rise(0).semantics { contentDescription = "${items.size} thẻ đến hạn" },
+                style = type.displayLarge.copy(fontSize = 112.sp, lineHeight = 112.sp, letterSpacing = (-5).sp),
+                fontWeight = FontWeight.ExtraBold, color = cs.primary,
+            )
+            Text("thẻ đến hạn hôm nay", Modifier.rise(0), style = type.titleLarge, fontWeight = FontWeight.SemiBold)
+            Text("Khoảng $minutes phút · ôn đúng lúc sắp quên giúp nhớ lâu", Modifier.padding(top = 4.dp).rise(0), style = type.bodyMedium, color = cs.onSurfaceVariant)
+            // thanh chia tỉ lệ thẻ theo mảng
+            Row(Modifier.padding(top = 26.dp, bottom = 10.dp).fillMaxWidth().height(12.dp).rise(1), horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                if (code > 0) Box(Modifier.weight(code.toFloat()).fillMaxHeight().background(palette.code.accent, CircleShape))
+                if (en > 0) Box(Modifier.weight(en.toFloat()).fillMaxHeight().background(palette.english.accent, CircleShape))
+            }
+            Row(Modifier.rise(1), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                if (code > 0) Legend("Lập trình $code", palette.code.accent)
+                if (en > 0) Legend("Tiếng Anh $en", palette.english.accent)
+            }
+            Column(Modifier.padding(top = 26.dp, bottom = 16.dp).rise(2), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                listOf(
+                    "Trả lời thẻ, rồi lật xem đáp án.",
+                    "Quên thì chấm “Lại” — thẻ quay lại sớm.",
+                    "Nhớ chắc thì thẻ giãn lịch ra xa hơn.",
+                ).forEachIndexed { i, step ->
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(Modifier.size(26.dp).background(cs.secondaryContainer, RoundedCornerShape(8.dp)), contentAlignment = Alignment.Center) {
+                            Text("${i + 1}", style = type.labelMedium, fontFamily = JetBrainsMono, fontWeight = FontWeight.Bold, color = cs.primary)
+                        }
+                        Spacer(Modifier.width(12.dp))
+                        Text(step, style = type.bodyMedium, color = cs.onSurfaceVariant)
+                    }
+                }
+            }
+        }
+        PushButton("Bắt đầu ôn", onStart, Modifier.fillMaxWidth().padding(bottom = 14.dp), icon = Icons.AutoMirrored.Filled.ArrowForward)
+    }
+}
+
+@Composable
+private fun Legend(text: String, color: Color) = Row(verticalAlignment = Alignment.CenterVertically) {
+    Box(Modifier.size(9.dp).background(color, RoundedCornerShape(3.dp)))
+    Spacer(Modifier.width(6.dp))
+    Text(text, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+}
+
+@Composable
+private fun Chip(text: String, bg: Color, fg: Color) =
+    Text(
+        text, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold, color = fg,
+        modifier = Modifier.background(bg, CircleShape).padding(horizontal = 12.dp, vertical = 6.dp),
+    )
 
 private fun dueText(ms: Long): String =
     DateTimeFormatter.ofPattern("HH:mm 'ngày' dd/MM").format(Instant.ofEpochMilli(ms).atZone(ZoneId.systemDefault()))
@@ -147,7 +225,7 @@ private fun dueText(ms: Long): String =
 private fun Session(ui: ReviewViewModel.Ui, vm: ReviewViewModel, online: Boolean, api: CodeApi) {
     val item = ui.items[ui.pos]
     ProvideTrack(if (item.card.track == "english") Track.ENGLISH else Track.CODE) {
-        Column(Modifier.fillMaxSize().safeDrawingPadding()) {
+        Column(Modifier.fillMaxSize().tabInsets().barPadding()) {
             Progress(ui.pos, ui.items.size)
             key(item.card.id) {
                 var verdict by remember { mutableStateOf<Boolean?>(null) } // card tự chấm: đúng/sai
@@ -258,7 +336,7 @@ internal fun RatingRow(preview: Map<Rating, Long>, onRate: (Rating) -> Unit) {
 @Composable
 private fun Finished(count: Int, onAgain: () -> Unit) {
     Column(
-        Modifier.fillMaxSize().safeDrawingPadding().padding(20.dp),
+        Modifier.fillMaxSize().tabInsets().barPadding().padding(20.dp),
         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
     ) {
         Sunrise(Modifier.size(96.dp))
