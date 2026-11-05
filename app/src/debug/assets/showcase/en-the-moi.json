@@ -1,0 +1,110 @@
+{
+ "title": "Thẻ mới mẫu",
+ "kind": "task",
+ "estimate_min": 8,
+ "can_do": "Nghe hội thoại hai người, điền thông tin, tả một biểu đồ và nói theo giờ",
+ "cards": [
+  {
+   "key": "nghe_hai_nguoi",
+   "type": "listen",
+   "turns": [
+    {
+     "who": "Receptionist",
+     "text": "Good morning, City Library. How can I help you?"
+    },
+    {
+     "who": "Tom",
+     "text": "Hi, I'd like to join the library. My name is Tom Baker."
+    },
+    {
+     "who": "Receptionist",
+     "text": "Sure. Could you come in on Monday with a photo ID?"
+    }
+   ],
+   "vi": "Lễ tân: Chào buổi sáng, Thư viện Thành phố xin nghe. — Tom: Chào chị, tôi muốn làm thẻ thư viện. Tôi tên Tom Baker. — Lễ tân: Được ạ. Anh ghé vào thứ Hai, mang theo giấy tờ có ảnh nhé.",
+   "questions": [
+    {
+     "q": "What does Tom want to do?",
+     "choices": [
+      "Join the library",
+      "Return a book",
+      "Book a room"
+     ],
+     "answer": [
+      0
+     ],
+     "why": [
+      "Đúng: \"I'd like to join the library\".",
+      "Sai: không nhắc tới trả sách.",
+      "Sai: không nhắc tới đặt phòng."
+     ]
+    }
+   ]
+  },
+  {
+   "key": "dien_form",
+   "type": "gap",
+   "text": "Surname: ___\nDay to come in: ___",
+   "answers": [
+    [
+     "Baker"
+    ],
+    [
+     "Monday",
+     "Mon"
+    ]
+   ],
+   "why": "Tom nói \"My name is Tom Baker\"; lễ tân hẹn \"on Monday\"."
+  },
+  {
+   "key": "bieu_do_quiz",
+   "type": "quiz",
+   "image": {
+    "asset": "assets/_sample-en/bieu-do-mau.png",
+    "alt": "Biểu đồ cột số khách thư viện từ tháng 1 tới tháng 6",
+    "credit": "Tự vẽ, số liệu tự đặt"
+   },
+   "q": "In which month did visitor numbers fall?",
+   "choices": [
+    "April",
+    "May",
+    "June"
+   ],
+   "answer": [
+    0
+   ],
+   "why": [
+    "Đúng: tháng 4 giảm từ 21 xuống 18.",
+    "Sai: tháng 5 tăng lên 26.",
+    "Sai: tháng 6 tăng lên 30."
+   ]
+  },
+  {
+   "key": "viet_task1",
+   "type": "free_text",
+   "mode": "writing",
+   "image": {
+    "asset": "assets/_sample-en/bieu-do-mau.png",
+    "alt": "Biểu đồ cột số khách thư viện từ tháng 1 tới tháng 6",
+    "credit": "Tự vẽ, số liệu tự đặt"
+   },
+   "prompt": "The chart shows the number of library visitors from January to June. Summarise the information by selecting and reporting the main features. Write at least 150 words.",
+   "rubric": "ielts_writing",
+   "sample": "The bar chart illustrates how many people visited a library each month in the first half of the year. Overall, visitor numbers rose considerably, despite a small dip in April..."
+  },
+  {
+   "key": "noi_part2",
+   "type": "speak_free",
+   "prompt": "**Describe a place where you like to study.** You should say: where it is, what it looks like, how often you go there, and explain why you like studying there.",
+   "rubric": "ielts_speaking",
+   "sample": "The place I'd like to talk about is a small café near my office...",
+   "prep_sec": 60,
+   "speak_sec": 120
+  },
+  {
+   "key": "nhai_lai",
+   "type": "shadow",
+   "text": "Could you come in on Monday with a photo ID?"
+  }
+ ]
+}

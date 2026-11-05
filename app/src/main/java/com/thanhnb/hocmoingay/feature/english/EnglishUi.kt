@@ -54,7 +54,7 @@ fun ttsStatus(): Tts.Status {
  * Máy thiếu giọng: nút mở màn cài giọng. Không có bộ đọc: không vẽ gì, màn gọi [ttsStatus] để hiện chữ.
  */
 @Composable
-fun SpeakerBar(text: String, autoPlay: Boolean = false) {
+fun SpeakerBar(text: String, autoPlay: Boolean = false, turns: List<Pair<String, String>> = emptyList()) {
     val tts = LocalTts.current ?: return
     val status by tts.status.collectAsStateWithLifecycle()
     val speaking by tts.speaking.collectAsStateWithLifecycle()
@@ -62,7 +62,9 @@ fun SpeakerBar(text: String, autoPlay: Boolean = false) {
     val owner = remember { Any() }
     val ctx = LocalContext.current
     val t = LocalTrack.current
-    LaunchedEffect(status, text, autoPlay) { if (autoPlay && status == Tts.Status.READY) tts.speak(text, owner) }
+    // turns: hội thoại nhiều giọng (listen.turns), text khi đó chỉ để hiện chữ
+    val play = { if (turns.isEmpty()) tts.speak(text, owner) else tts.speakTurns(turns, owner) }
+    LaunchedEffect(status, text, autoPlay) { if (autoPlay && status == Tts.Status.READY) play() }
     DisposableEffect(Unit) { onDispose { tts.stop(owner) } }
     when (status) {
         Tts.Status.UNAVAILABLE -> {}
@@ -71,14 +73,14 @@ fun SpeakerBar(text: String, autoPlay: Boolean = false) {
             PushButton("Cài giọng đọc", { tts.installVoice(ctx) })
         }
         else -> Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Pushable({ tts.speak(text, owner) }, t.accent, CircleShape, Modifier.size(56.dp), enabled = status == Tts.Status.READY) {
+            Pushable({ play() }, t.accent, CircleShape, Modifier.size(56.dp), enabled = status == Tts.Status.READY) {
                 Icon(
                     if (speaking) Icons.Filled.Refresh else SpeakerIcon, if (speaking) "Nghe lại" else "Nghe",
                     tint = t.onAccent, modifier = Modifier.align(Alignment.Center).size(28.dp),
                 )
             }
             SPEEDS.forEach { (r, label) ->
-                FilterChip(selected = rate == r, onClick = { tts.setRate(r); tts.speak(text, owner) }, label = { Text(label) })
+                FilterChip(selected = rate == r, onClick = { tts.setRate(r); play() }, label = { Text(label) })
             }
         }
     }

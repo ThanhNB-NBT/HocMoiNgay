@@ -182,20 +182,61 @@ fun TimedTalkCard(c: TimedTalk, ctx: CardCtx) {
     }
 }
 
-/** speak_free: nói tự do tối đa 90 giây, sửa transcript nếu máy nghe nhầm, rồi gửi `feedback` mode speaking. */
+/** Giây → "1:05" cho đồng hồ đếm ngược. */
+fun clock(sec: Int): String = "%d:%02d".format(sec / 60, sec % 60)
+
+/**
+ * speak_free: nói tự do, sửa transcript nếu máy nghe nhầm, rồi gửi `feedback` mode speaking.
+ * Có `prep_sec` thì đếm ngược chuẩn bị (ghi nháp được, như thẻ đề IELTS Part 2) rồi tự bật micro.
+ * Nói tối đa `speak_sec` giây (mặc định 90), hết giờ thì tự dừng.
+ */
 @Composable
 fun SpeakFreeCard(c: SpeakFree, ctx: CardCtx) {
     val talk = rememberTalk()
     if (talk == null || !rememberHasMic(talk)) return NoMic(ctx)
+    val limit = c.speakSec.takeIf { it > 0 } ?: 90
     var transcript by rememberSaveable { mutableStateOf("") }
+    var notes by rememberSaveable { mutableStateOf("") }
+    var prepping by rememberSaveable { mutableStateOf(false) }
+    var prepLeft by rememberSaveable { mutableIntStateOf(c.prepSec) }
+    var speakLeft by remember { mutableIntStateOf(limit) }
     var denied by remember { mutableStateOf(false) }
-    val mic = rememberMic(onDenied = { denied = true }) { denied = false; talk.start(90_000) }
-    LaunchedEffect(talk.on) { if (!talk.on && talk.text.isNotBlank()) transcript = talk.text }
+    val mic = rememberMic(onDenied = { denied = true }) { denied = false; talk.start(limit * 1000L) }
+    LaunchedEffect(talk.on) {
+        if (!talk.on) { if (talk.text.isNotBlank()) transcript = talk.text; return@LaunchedEffect }
+        speakLeft = limit
+        while (speakLeft > 0) { delay(1000); speakLeft-- }
+        talk.stop()
+    }
+    LaunchedEffect(prepping) {
+        if (!prepping) return@LaunchedEffect
+        while (prepLeft > 0) { delay(1000); prepLeft-- }
+        prepping = false
+        mic()
+    }
+    val accent = LocalTrack.current.accent
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        ImageBlock(c.image)
         Markdown(c.prompt)
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            MicButton(talk.on) { if (talk.on) talk.stop() else mic() }
-            Text(if (talk.on) "Đang nghe… bấm để dừng (tối đa 90 giây)" else "Bấm micro rồi nói", style = MaterialTheme.typography.bodyLarge)
+        if (prepping) {
+            Text("Chuẩn bị", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(clock(prepLeft), style = MaterialTheme.typography.displayMedium, fontWeight = FontWeight.Bold, color = accent)
+        }
+        if (prepping || notes.isNotBlank()) {
+            OutlinedTextField(notes, { notes = it }, Modifier.fillMaxWidth().heightIn(min = 96.dp), label = { Text("Ghi chú nháp (không chấm)") })
+        }
+        if (prepping) TextButton(onClick = { prepLeft = 0 }) { Text("Nói luôn") }
+        else {
+            if (c.prepSec > 0 && prepLeft == c.prepSec && !talk.on) {
+                PushButton("Bắt đầu chuẩn bị (${clock(c.prepSec)})", { prepping = true }, Modifier.fillMaxWidth())
+            }
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                MicButton(talk.on) { if (talk.on) talk.stop() else mic() }
+                Text(
+                    if (talk.on) "Còn ${clock(speakLeft)} · bấm để dừng" else "Bấm micro rồi nói (tối đa ${clock(limit)})",
+                    style = MaterialTheme.typography.bodyLarge, color = if (talk.on && speakLeft <= 10) LocalFun.current.coral else MaterialTheme.colorScheme.onSurface,
+                )
+            }
         }
         if (talk.on) Text(talk.shown, color = MaterialTheme.colorScheme.onSurfaceVariant)
         talk.error?.let { Why(it, ok = false) }
@@ -203,29 +244,35 @@ fun SpeakFreeCard(c: SpeakFree, ctx: CardCtx) {
         if (transcript.isNotBlank() && !talk.on) {
             OutlinedTextField(transcript, { transcript = it }, Modifier.fillMaxWidth(), label = { Text("App nghe được (sửa nếu nhận sai)") })
         }
-        FeedbackArea(transcript, minChars = 10, speaking = true, sample = c.sample, ctx = ctx)
+        FeedbackArea(transcript, minChars = 10, speaking = true, sample = c.sample, rubric = c.rubric, ctx = ctx)
     }
 }
 
-/** free_text mode writing: viết rồi gửi `feedback` mode writing. */
+/** free_text mode writing: viết rồi gửi `feedback` mode writing. Hiện số từ vì đề thi hay đòi tối thiểu (150/250 từ). */
 @Composable
 fun WritingCard(c: FreeText, ctx: CardCtx) {
     var text by rememberSaveable { mutableStateOf("") }
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        ImageBlock(c.image)
         Markdown(c.prompt)
-        OutlinedTextField(text, { text = it }, Modifier.fillMaxWidth().heightIn(min = 140.dp), label = { Text("Bài viết của bạn (tiếng Anh)") })
-        FeedbackArea(text, minChars = 20, speaking = false, sample = c.sample, ctx = ctx)
+        OutlinedTextField(
+            text, { text = it }, Modifier.fillMaxWidth().heightIn(min = 140.dp), label = { Text("Bài viết của bạn (tiếng Anh)") },
+            supportingText = { Text("${wordCount(text)} từ") },
+        )
+        FeedbackArea(text, minChars = 20, speaking = false, sample = c.sample, rubric = c.rubric, ctx = ctx)
     }
 }
 
+fun wordCount(s: String): Int = s.trim().split(Regex("\\s+")).count { it.isNotEmpty() }
+
 /** Nút Nhận xét + Bỏ qua dùng chung; thiếu mạng thì tắt nút và cho bỏ qua (spec §7.2). */
 @Composable
-private fun FeedbackArea(text: String, minChars: Int, speaking: Boolean, sample: String, ctx: CardCtx) {
+private fun FeedbackArea(text: String, minChars: Int, speaking: Boolean, sample: String, rubric: String, ctx: CardCtx) {
     val scope = rememberCoroutineScope()
     var busy by remember { mutableStateOf(false) }
     var fb by remember { mutableStateOf<WriteFb?>(null) }
     var err by remember { mutableStateOf<String?>(null) }
-    fb?.let { return WriteFbView(it, sample) }
+    fb?.let { return WriteFbView(it, sample, rubric) }
     if (!ctx.online) Text("Cần mạng để nhận xét. Bạn có thể bỏ qua card này.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
     PushButton(if (busy) "Đang nhận xét…" else "Nhận xét", {
         busy = true; err = null
@@ -233,7 +280,7 @@ private fun FeedbackArea(text: String, minChars: Int, speaking: Boolean, sample:
             when (val r = ctx.api.writing(ctx.lessonId, ctx.cardKey, text, speaking)) {
                 is ApiResult.Ok -> {
                     fb = r.value
-                    ctx.save(buildJsonObject { put("text", text); put("score", r.value.score) })
+                    ctx.save(buildJsonObject { put("text", text); put("score", r.value.score); r.value.overall?.let { put("overall", it) } })
                     if (!ctx.answered) ctx.onAnswer(true, false)
                 }
                 is ApiResult.Err -> err = r.message
@@ -245,12 +292,26 @@ private fun FeedbackArea(text: String, minChars: Int, speaking: Boolean, sample:
     err?.let { Why(it, ok = false) }
 }
 
+/** Điểm tổng theo rubric đề thi: "Band 6.5" (IELTS) hoặc "160/200" (TOEIC S&W); rubric thường thì "7/10". */
+fun scoreLabel(r: WriteFb, rubric: String): String {
+    val o = r.overall ?: return "${r.score}/10"
+    return if (rubric.startsWith("ielts")) "Band " + "%.1f".format(java.util.Locale.US, o) else "${o.toInt()}/200"
+}
+
 @Composable
-private fun WriteFbView(r: WriteFb, sample: String) {
+private fun WriteFbView(r: WriteFb, sample: String, rubric: String) {
+    val ielts = rubric.startsWith("ielts")
     Pushable(null, MaterialTheme.colorScheme.secondaryContainer, RoundedCornerShape(16.dp), Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("${r.score}/10", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            Text(scoreLabel(r, rubric), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
             Text(if (r.taskDone) "Đã làm đúng yêu cầu của đề." else "Chưa làm đủ yêu cầu của đề.", style = MaterialTheme.typography.bodyMedium)
+            r.criteria.forEach { x ->
+                Text(
+                    x.name + ": " + if (ielts) "%.1f".format(java.util.Locale.US, x.score) else x.score.toInt().toString(),
+                    style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold,
+                )
+                if (x.note.isNotBlank()) Text(x.note, style = MaterialTheme.typography.bodySmall)
+            }
             r.fixes.forEach { x ->
                 Text(
                     buildAnnotatedString {

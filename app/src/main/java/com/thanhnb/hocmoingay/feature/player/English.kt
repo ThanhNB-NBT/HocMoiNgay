@@ -4,6 +4,7 @@ import com.thanhnb.hocmoingay.core.lesson.Card
 import com.thanhnb.hocmoingay.core.lesson.Dialogue
 import com.thanhnb.hocmoingay.core.lesson.Explain
 import com.thanhnb.hocmoingay.core.lesson.FreeText
+import com.thanhnb.hocmoingay.core.lesson.Gap
 import com.thanhnb.hocmoingay.core.lesson.LessonJson
 import com.thanhnb.hocmoingay.core.lesson.Listen
 import com.thanhnb.hocmoingay.core.lesson.Match
@@ -23,7 +24,7 @@ import kotlinx.serialization.json.JsonPrimitive
 
 /** Mạch của card trong bài tiếng Anh (spec §6.3, 4 mạch của Nation). Card lập trình trả null. */
 fun strandOf(card: Card): String? = when (card) {
-    is Vocab, is MinimalPair, is Speak, is Quiz, is Match -> "language"
+    is Vocab, is MinimalPair, is Speak, is Quiz, is Match, is Gap -> "language"
     is Listen, is Read, is Explain -> "input"
     is Shadow, is TimedTalk -> "fluency"
     is Dialogue, is SpeakFree, is FreeText -> "output"
@@ -56,6 +57,10 @@ fun parseTurns(raw: List<JsonObject>): List<Turn> = raw.mapNotNull { o ->
         (o["text"] as? JsonPrimitive)?.content?.let { Turn.Line(who, it, (o["vi"] as? JsonPrimitive)?.content.orEmpty()) }
     }
 }
+
+/** listen.turns → (người nói, câu) cho [com.thanhnb.hocmoingay.core.speech.Tts.speakTurns]. */
+fun listenTurns(raw: List<JsonObject>): List<Pair<String, String>> =
+    parseTurns(raw).filterIsInstance<Turn.Line>().map { it.who to it.text }
 
 /** minimal_pair (C6): mỗi cặp một lượt; app đọc một từ chọn theo seed nên xoay màn không đổi. */
 fun minimalRounds(pairs: List<List<String>>, seed: String): List<Pair<List<String>, Int>> {

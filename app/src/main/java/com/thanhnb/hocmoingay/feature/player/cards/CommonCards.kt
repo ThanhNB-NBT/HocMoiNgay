@@ -26,7 +26,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.thanhnb.hocmoingay.core.code.AssetImage
 import com.thanhnb.hocmoingay.core.code.Markdown
+import com.thanhnb.hocmoingay.core.lesson.CardImage
+import com.thanhnb.hocmoingay.core.lesson.Gap
 import com.thanhnb.hocmoingay.core.code.inlineMd
 import com.thanhnb.hocmoingay.core.lesson.Card
 import com.thanhnb.hocmoingay.core.lesson.Dialogue
@@ -78,6 +81,7 @@ fun CardView(card: Card, ctx: CardCtx) = when (card) {
     is Read -> ReadCard(card, ctx)
     is MinimalPair -> MinimalPairCard(card, ctx)
     is Dialogue -> DialogueCard(card, ctx)
+    is Gap -> GapCard(card, ctx)
     else -> CodeCardView(card, ctx)
 }
 
@@ -102,7 +106,20 @@ fun LaterCard(ctx: CardCtx) {
 }
 
 @Composable
-private fun QuizCard(c: Quiz, ctx: CardCtx) = QuizBlock(c.q, c.choices, c.answer, c.why, ctx.seed) { ctx.onAnswer(it, true) }
+private fun QuizCard(c: Quiz, ctx: CardCtx) = Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    ImageBlock(c.image)
+    QuizBlock(c.q, c.choices, c.answer, c.why, ctx.seed) { ctx.onAnswer(it, true) }
+}
+
+/** Ảnh của card (tải từ storage, cache đĩa) kèm dòng ghi nguồn nhỏ bên dưới. */
+@Composable
+fun ImageBlock(img: CardImage?) {
+    img ?: return
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        AssetImage(img.asset, img.alt)
+        if (img.credit.isNotBlank()) Text(img.credit, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
 
 /** Một câu trắc nghiệm (quiz, câu hỏi của listen/read): xáo theo [seed], `why` đi theo lựa chọn. */
 @Composable

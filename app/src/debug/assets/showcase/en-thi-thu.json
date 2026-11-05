@@ -1,0 +1,135 @@
+{
+ "title": "Thi thử mẫu",
+ "kind": "mock",
+ "exam": "ielts_academic",
+ "estimate_min": 8,
+ "can_do": "Làm thử một đề IELTS rút gọn có bấm giờ và xem band ước tính",
+ "parts": [
+  {
+   "title": "Listening",
+   "skill": "listening",
+   "time_min": 4,
+   "cards": 2
+  },
+  {
+   "title": "Reading",
+   "skill": "reading",
+   "time_min": 5,
+   "cards": 3
+  }
+ ],
+ "cards": [
+  {
+   "key": "l_hoi_thoai",
+   "type": "listen",
+   "turns": [
+    {
+     "who": "Agent",
+     "text": "Sunrise Travel, good afternoon."
+    },
+    {
+     "who": "Lisa",
+     "text": "Hello, I'd like to book a city tour for Saturday, for two people."
+    },
+    {
+     "who": "Agent",
+     "text": "Of course. The morning tour starts at nine and costs forty dollars each."
+    }
+   ],
+   "questions": [
+    {
+     "q": "How many people will go on the tour?",
+     "choices": [
+      "One",
+      "Two",
+      "Four"
+     ],
+     "answer": [
+      1
+     ]
+    }
+   ]
+  },
+  {
+   "key": "l_dien",
+   "type": "gap",
+   "text": "Day of tour: ___\nStart time: ___ a.m.\nPrice per person: $___",
+   "answers": [
+    [
+     "Saturday",
+     "Sat"
+    ],
+    [
+     "nine",
+     "9"
+    ],
+    [
+     "forty",
+     "40"
+    ]
+   ],
+   "why": "Lisa đặt tour \"for Saturday\"; tour sáng bắt đầu \"at nine\", giá \"forty dollars each\"."
+  },
+  {
+   "key": "r_doan",
+   "type": "read",
+   "md": "**Urban gardens**\n\nIn many cities, empty rooftops are being turned into gardens. Supporters say these gardens cool buildings in summer and give residents fresh vegetables. However, critics point out that the cost of strengthening old roofs can be high.",
+   "questions": [
+    {
+     "q": "Rooftop gardens can lower the temperature of buildings.",
+     "choices": [
+      "TRUE",
+      "FALSE",
+      "NOT GIVEN"
+     ],
+     "answer": [
+      0
+     ]
+    },
+    {
+     "q": "Most residents prefer rooftop gardens to parks.",
+     "choices": [
+      "TRUE",
+      "FALSE",
+      "NOT GIVEN"
+     ],
+     "answer": [
+      2
+     ]
+    }
+   ]
+  },
+  {
+   "key": "r_tom_tat",
+   "type": "gap",
+   "text": "Critics say that making old roofs stronger can be ___.",
+   "answers": [
+    [
+     "high cost",
+     "costly",
+     "expensive",
+     "high"
+    ]
+   ],
+   "why": "Đoạn văn: \"the cost of strengthening old roofs can be high\"."
+  },
+  {
+   "key": "r_quiz",
+   "type": "quiz",
+   "q": "What is the main idea of the passage?",
+   "choices": [
+    "Rooftop gardens have benefits and costs",
+    "Parks are disappearing",
+    "Vegetables are expensive"
+   ],
+   "answer": [
+    0
+   ],
+   "why": [
+    "Đúng: đoạn nêu cả lợi ích lẫn chi phí.",
+    "Sai: không nói về công viên.",
+    "Sai: không nói giá rau."
+   ]
+  }
+ ]
+}

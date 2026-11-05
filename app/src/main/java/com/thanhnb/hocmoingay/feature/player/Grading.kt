@@ -22,5 +22,9 @@ fun reviewOk(picked: Set<Int>, issues: List<Issue>): Boolean {
 }
 /** Hoán vị cố định theo seed (`<bài>#<card>#<vị trí>`): xoay màn hay recompose không đổi thứ tự lựa chọn. */
 fun permutation(n: Int, seed: String): List<Int> = (0 until n).shuffled(Random(seed.hashCode()))
+/** Thẻ gap: không phân biệt hoa thường và dấu câu ("Mon." = "mon", "part-time" = "part time"). */
+fun gapNorm(s: String) = norm(s.lowercase().replace('-', ' ').replace(Regex("""[^\p{L}\p{N}\s]"""), ""))
+fun gapOk(given: List<String>, answers: List<List<String>>) =
+    given.size == answers.size && given.indices.all { i -> answers[i].any { gapNorm(it) == gapNorm(given[i]) } }
 /** "t = ___ g" → ["t = ", " g"]: n chỗ trống thì n + 1 đoạn. */
 fun blankParts(text: String): List<String> = text.split("___")

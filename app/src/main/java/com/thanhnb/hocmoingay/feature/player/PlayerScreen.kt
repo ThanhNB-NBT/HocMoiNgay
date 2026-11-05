@@ -71,6 +71,7 @@ import com.thanhnb.hocmoingay.core.ui.Pushable
 import com.thanhnb.hocmoingay.core.ui.TickUpNumber
 import com.thanhnb.hocmoingay.core.ui.shared
 import com.thanhnb.hocmoingay.feature.Placeholder
+import com.thanhnb.hocmoingay.feature.mock.MockScreen
 import com.thanhnb.hocmoingay.feature.player.cards.CardCtx
 import com.thanhnb.hocmoingay.feature.player.cards.CardView
 import kotlinx.serialization.json.JsonObject
@@ -93,6 +94,7 @@ fun PlayerScreen(vm: PlayerViewModel, lessonId: String, onBack: () -> Unit, onOp
             TopBar(q.progress, onBack)
             when {
                 !started -> Intro(body, lessonId, grammar, onOpenLesson, vm::start)
+                body.kind == "mock" -> MockScreen(body, onFinish = vm::finishMock, onBack = onBack)
                 q.finished -> Done(q.score, body.codePending(states), body.hasReview, body.kind == "checkpoint", onBack)
                 else -> {
                     // số trang tăng khi card sai được thêm vào cuối: lambda phải đọc giá trị mới, không phải q lúc dựng đầu
@@ -153,7 +155,10 @@ private fun Intro(b: LessonBody, lessonId: String, grammar: List<Pair<String, St
                 Text(b.canDo, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondaryContainer)
             }
         }
-        Text("${b.cards.size} thẻ · khoảng ${b.estimateMin} phút", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        if (b.kind == "mock") {
+            Text(b.parts.joinToString(" · ") { "${it.title} ${it.timeMin} phút" }, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("Mỗi phần có đồng hồ riêng, hết giờ tự sang phần sau. Đáp án và điểm quy đổi hiện khi nộp hết bài.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        } else Text("${b.cards.size} thẻ · khoảng ${b.estimateMin} phút", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
         grammar.forEach { (id, title) ->
             OutlinedButton({ onOpenLesson(id) }, Modifier.fillMaxWidth()) {
                 Text("Xem ngữ pháp: $title", maxLines = 1, overflow = TextOverflow.Ellipsis)

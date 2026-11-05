@@ -170,7 +170,7 @@ private fun MdTable(rows: List<List<String>>, fmt: (String) -> AnnotatedString) 
 }
 
 @Composable
-private fun AssetImage(path: String, alt: String) {
+fun AssetImage(path: String, alt: String) {
     val assets = LocalAssets.current
     val img by produceState<ImageBitmap?>(null, path) {
         val bytes = assets?.bytes(path) ?: return@produceState

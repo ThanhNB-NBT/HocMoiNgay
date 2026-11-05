@@ -27,6 +27,8 @@ data class LessonBody(
     val difficulty: String? = null,
     val review: List<ReviewNote> = emptyList(),
     val grammar: List<String> = emptyList(), // id chủ điểm Ngữ pháp liên quan (bài task tiếng Anh)
+    val exam: String? = null,                 // bài mock: toeic_lr | ielts_academic | ielts_general
+    val parts: List<MockPart> = emptyList(),  // bài mock: các phần nối tiếp nhau trong [cards]
     @Transient val cards: List<Card> = emptyList(), // parse riêng từng card để một card hỏng không kéo cả bài
 ) {
     /** Bài có thẻ ôn (card `review: true` hoặc ghi chú `review`): màn Xong mới nói "đã vào lịch ôn". */
@@ -34,6 +36,12 @@ data class LessonBody(
 }
 
 @Serializable data class ReviewNote(val key: String, val front: String, val back: String)
+
+/** Một phần của đề thi thử: [cards] thẻ kế tiếp trong bài, làm trong [timeMin] phút. */
+@Serializable data class MockPart(val title: String, val skill: String, @SerialName("time_min") val timeMin: Int, val cards: Int)
+
+/** Ảnh trong card: `assets/<khoá>/x` (tải qua [com.thanhnb.hocmoingay.core.net.Assets]), kèm ghi nguồn. */
+@Serializable data class CardImage(val asset: String, val alt: String = "", val credit: String = "")
 
 @Serializable
 sealed interface Card {
@@ -48,12 +56,12 @@ sealed interface Card {
 @Serializable data class Say(val en: String, val vi: String = "")
 @Serializable @SerialName("quiz") data class Quiz(
     override val key: String, override val review: Boolean = false,
-    val q: String, val choices: List<String>, val answer: List<Int>, val why: List<String> = emptyList(),
+    val q: String, val choices: List<String>, val answer: List<Int>, val why: List<String> = emptyList(), val image: CardImage? = null,
 ) : Card
 @Serializable @SerialName("match") data class Match(override val key: String, override val review: Boolean = false, val pairs: List<List<String>>) : Card
 @Serializable @SerialName("free_text") data class FreeText(
     override val key: String, override val review: Boolean = false,
-    val mode: String, val prompt: String, val rubric: String = "", val sample: String = "",
+    val mode: String, val prompt: String, val rubric: String = "", val sample: String = "", val image: CardImage? = null,
 ) : Card
 
 // ===== Lập trình
@@ -111,9 +119,12 @@ sealed interface Card {
 @Serializable @SerialName("listen") data class Listen(
     override val key: String, override val review: Boolean = false, val text: String? = null, val audio: String? = null,
     val questions: List<JsonObject> = emptyList(), val vi: String = "", // vi: bản dịch, hiện khi người học bấm
+    val turns: List<JsonObject> = emptyList(), // hội thoại nhiều giọng {who, text}, thay cho text
+    val image: CardImage? = null,
 ) : Card
 @Serializable @SerialName("read") data class Read(
     override val key: String, override val review: Boolean = false, val md: String, val questions: List<JsonObject> = emptyList(), val vi: String = "",
+    val image: CardImage? = null,
 ) : Card
 @Serializable @SerialName("minimal_pair") data class MinimalPair(override val key: String, override val review: Boolean = false, val pairs: List<List<String>>, val focus: String = "") : Card
 @Serializable @SerialName("speak") data class Speak(override val key: String, override val review: Boolean = false, val text: String) : Card
@@ -127,6 +138,12 @@ sealed interface Card {
 ) : Card
 @Serializable @SerialName("speak_free") data class SpeakFree(
     override val key: String, override val review: Boolean = false, val prompt: String, val rubric: String = "", val sample: String = "",
+    @SerialName("prep_sec") val prepSec: Int = 0, @SerialName("speak_sec") val speakSec: Int = 0, val image: CardImage? = null,
+) : Card
+/** Gõ đáp án (IELTS form/note/summary completion): mỗi `___` một ô, [answers] là các cách viết được chấp nhận. */
+@Serializable @SerialName("gap") data class Gap(
+    override val key: String, override val review: Boolean = false, val text: String, val answers: List<List<String>>,
+    val why: String = "", val image: CardImage? = null,
 ) : Card
 
 /** Trả null khi body không phải object JSON. Card lạ hoặc thiếu trường thì bỏ qua và ghi log, các card khác vẫn dùng được. */

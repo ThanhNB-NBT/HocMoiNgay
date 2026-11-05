@@ -85,6 +85,17 @@ class PlayerViewModel(
         }
     }
 
+    /** Nộp hết đề thi thử: [score] = % câu đúng; phút học tính cả lượt thi, tối đa tổng thời gian các phần. */
+    private var mockDone = false
+    fun finishMock(score: Int) {
+        if (mockDone) return // màn kết quả dựng lại khi xoay máy
+        mockDone = true
+        val t = now()
+        meter.add(t, minOf(t - shownAt, (_body.value?.parts?.sumOf { it.timeMin } ?: 0) * MINUTE_MS))
+        meter.flush(t)
+        writeScope.launch { repo.finish(lessonId, score) }
+    }
+
     override fun onCleared() = meter.flush(now())
     fun saveCard(key: String, value: JsonObject) { writeScope.launch { repo.updateCard(lessonId, key) { value } } }
 }

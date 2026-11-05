@@ -28,7 +28,19 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.thanhnb.hocmoingay.core.code.Markdown
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.runtime.mutableStateListOf
 import com.thanhnb.hocmoingay.core.lesson.Dialogue
+import com.thanhnb.hocmoingay.core.lesson.Gap
+import com.thanhnb.hocmoingay.core.theme.LocalFun
+import com.thanhnb.hocmoingay.core.ui.PushButton
+import com.thanhnb.hocmoingay.feature.player.gapOk
+import com.thanhnb.hocmoingay.feature.player.listenTurns
 import com.thanhnb.hocmoingay.core.lesson.Listen
 import com.thanhnb.hocmoingay.core.lesson.MinimalPair
 import com.thanhnb.hocmoingay.core.lesson.Read
@@ -94,7 +106,8 @@ private fun QuestionsBlock(qs: List<ListenQuestion>, ctx: CardCtx) {
 
 @Composable
 fun ListenCard(c: Listen, ctx: CardCtx) {
-    val text = c.text
+    val turns = remember(c) { listenTurns(c.turns) }
+    val text = c.text ?: turns.takeIf { it.isNotEmpty() }?.joinToString("\n") { (who, t) -> "$who: $t" }
     if (text == null) { // Quyết định 8: chưa hỗ trợ file âm thanh
         Ungraded(ctx)
         Text("Bài nghe dạng file âm thanh chưa có trong bản này. Bấm Tiếp để học tiếp.", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -105,7 +118,8 @@ fun ListenCard(c: Listen, ctx: CardCtx) {
     val qs = remember(c) { parseQuestions(c.questions) }
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Text("Nghe rồi trả lời", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-        SpeakerBar(text, autoPlay = ctx.active)
+        ImageBlock(c.image)
+        SpeakerBar(text, autoPlay = ctx.active, turns = turns)
         // máy không đọc được thì hiện chữ luôn (đường dự phòng), còn lại chỉ hiện khi người học muốn hoặc đã trả lời
         if (show || ctx.answered || status == Tts.Status.UNAVAILABLE || status == Tts.Status.MISSING_DATA) {
             Text(text, Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceContainerHigh, RoundedCornerShape(16.dp)).padding(14.dp), style = MaterialTheme.typography.bodyLarge)
@@ -121,9 +135,50 @@ fun ListenCard(c: Listen, ctx: CardCtx) {
 fun ReadCard(c: Read, ctx: CardCtx) {
     val qs = remember(c) { parseQuestions(c.questions) }
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        ImageBlock(c.image)
         Markdown(c.md)
         Translation(c.vi)
         QuestionsBlock(qs, ctx)
+    }
+}
+
+/** "Name: ___" → "Name: (1) ______": đánh số chỗ trống để khớp với ô gõ bên dưới. */
+fun numberedBlanks(text: String, start: Int = 1): String {
+    var i = start - 1
+    return Regex("___").replace(text) { "(${++i}) ______" }
+}
+
+/** gap: gõ 1–3 từ vào mỗi chỗ trống, chấm không phân biệt hoa thường và dấu câu. */
+@Composable
+fun GapCard(c: Gap, ctx: CardCtx) {
+    val fills = remember { mutableStateListOf(*Array(c.answers.size) { "" }) }
+    var checked by rememberSaveable { mutableStateOf<Boolean?>(null) }
+    val f = LocalFun.current
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text("Điền vào chỗ trống", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        ImageBlock(c.image)
+        Text(
+            numberedBlanks(c.text), Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceContainerLowest, RoundedCornerShape(16.dp)).padding(14.dp),
+            style = MaterialTheme.typography.bodyLarge,
+        )
+        fills.indices.forEach { i ->
+            val right = checked != null && gapOk(listOf(fills[i]), listOf(c.answers[i]))
+            val tone = if (right) f.mint else f.coral
+            OutlinedTextField(
+                fills[i], { fills[i] = it }, Modifier.fillMaxWidth(), label = { Text("Chỗ trống ${i + 1}") }, singleLine = true, readOnly = checked != null,
+                trailingIcon = if (checked == null) null else { { Icon(if (right) Icons.Filled.Check else Icons.Filled.Close, if (right) "Đúng" else "Sai", tint = tone) } },
+                colors = if (checked == null) OutlinedTextFieldDefaults.colors() else OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = tone, unfocusedBorderColor = tone, focusedLabelColor = tone, unfocusedLabelColor = tone,
+                ),
+            )
+        }
+        if (checked == null) PushButton("Kiểm tra", {
+            val ok = gapOk(fills.toList(), c.answers); checked = ok; ctx.onAnswer(ok, true)
+        }, Modifier.fillMaxWidth(), enabled = fills.all { it.isNotBlank() })
+        else Why(
+            (if (checked == false) "Đáp án: " + c.answers.mapIndexed { i, a -> "(${i + 1}) ${a.first()}" }.joinToString("   ") + "\n" else "") + c.why,
+            ok = checked == true,
+        )
     }
 }
 

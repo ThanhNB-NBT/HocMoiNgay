@@ -78,7 +78,10 @@ fun compileEta(lang: String): Int? = when (lang) {
     @SerialName("task_done") val taskDone: Boolean, val score: Int, val fixes: List<Fix> = emptyList(), val tone: String = "",
     @SerialName("better_version") val betterVersion: String = "", @SerialName("used_chunks") val usedChunks: List<String> = emptyList(),
     val notes: String = "",
+    val criteria: List<Criterion> = emptyList(), // chỉ có khi card dùng rubric đề thi (ielts_*/toeic_*)
+    val overall: Double? = null,                 // band IELTS 0–9 hoặc điểm TOEIC 0–200
 )
+@Serializable data class Criterion(val name: String, val score: Double, val note: String = "")
 @Serializable private data class StarterOut(val code: String)
 @Serializable private data class HintOut(val lines: List<String>)
 

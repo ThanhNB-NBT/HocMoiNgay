@@ -55,6 +55,29 @@ class Tts(ctx: Context) {
         engine.speak(text, TextToSpeech.QUEUE_FLUSH, null, "u${System.nanoTime()}")
     }
 
+    /**
+     * Hội thoại nhiều người: mỗi người (theo thứ tự xuất hiện) một giọng tiếng Anh khác và một cao độ khác,
+     * nên máy chỉ có một giọng vẫn phân biệt được. Giọng/cao độ được chép vào từng câu lúc xếp hàng, nên trả lại mặc định ngay sau đó.
+     */
+    fun speakTurns(turns: List<Pair<String, String>>, owner: Any) {
+        if (_status.value != Status.READY || turns.isEmpty()) return
+        this.owner = owner
+        engine.setSpeechRate(_rate.value)
+        val base = engine.voice
+        val voices = runCatching {
+            engine.voices.orEmpty().filter {
+                it.locale.language == "en" && !it.isNetworkConnectionRequired && TextToSpeech.Engine.KEY_FEATURE_NOT_INSTALLED !in it.features
+            }.sortedBy { it.name }.filter { it != base }
+        }.getOrDefault(emptyList())
+        speakerSlots(turns.map { it.first }).forEachIndexed { i, slot ->
+            if (slot == 0 || voices.isEmpty()) base?.let { engine.voice = it } else engine.voice = voices[(slot - 1) % voices.size]
+            engine.setPitch(PITCHES[slot % PITCHES.size])
+            engine.speak(turns[i].second, if (i == 0) TextToSpeech.QUEUE_FLUSH else TextToSpeech.QUEUE_ADD, null, "u${System.nanoTime()}")
+        }
+        base?.let { engine.voice = it }
+        engine.setPitch(1f)
+    }
+
     fun stop(owner: Any) {
         if (this.owner !== owner) return
         engine.stop()
@@ -66,6 +89,14 @@ class Tts(ctx: Context) {
         ctx.startActivity(Intent(TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
     }.isSuccess
 }
+
+/** Mỗi câu thuộc người thứ mấy (0, 1, 2… theo thứ tự xuất hiện): người 0 dùng giọng mặc định. */
+fun speakerSlots(who: List<String>): List<Int> {
+    val order = who.distinct()
+    return who.map { order.indexOf(it) }
+}
+
+private val PITCHES = floatArrayOf(1f, 0.82f, 1.22f, 0.92f)
 
 /** 1,0 của bộ đọc Android nhanh với người mới học; mặc định chậm hơn. */
 const val DEFAULT_RATE = 0.75f
