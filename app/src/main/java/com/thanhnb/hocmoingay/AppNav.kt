@@ -1,5 +1,15 @@
 package com.thanhnb.hocmoingay
 
+import androidx.navigation3.runtime.NavEntryDecorator
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.ContentTransform
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
+import androidx.navigation3.scene.Scene
+import com.thanhnb.hocmoingay.core.ui.Settle
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -103,6 +113,31 @@ private fun tabIcon(k: NavKey): ImageVector = when (k) {
     else -> Icons.Filled.Person
 }
 
+// Hiệu ứng điều hướng: màn mới trượt vào từ phải, màn dưới lùi 1/4 và tối đi; quay lại (nút hay vuốt) thì ngược lại.
+// Đổi giữa các tab chỉ mờ nhanh. Tab được đánh dấu bằng metadata của entry.
+private val TabMeta = mapOf("tab" to true)
+private fun Scene<*>.isTab() = entries.lastOrNull()?.metadata?.get("tab") == true
+private fun <T> navTween() = tween<T>(340, easing = Settle)
+
+private fun AnimatedContentTransitionScope<Scene<NavKey>>.tabFade() = fadeIn(tween(180)) togetherWith fadeOut(tween(120))
+
+private fun AnimatedContentTransitionScope<Scene<NavKey>>.pushSpec(): ContentTransform =
+    if (initialState.isTab() && targetState.isTab()) tabFade()
+    else slideInHorizontally(navTween()) { it } togetherWith (slideOutHorizontally(navTween()) { -it / 4 } + fadeOut(navTween(), targetAlpha = 0.6f))
+
+private fun AnimatedContentTransitionScope<Scene<NavKey>>.popSpec(): ContentTransform =
+    if (initialState.isTab() && targetState.isTab()) tabFade()
+    else ContentTransform(
+        slideInHorizontally(navTween()) { -it / 4 } + fadeIn(navTween(), initialAlpha = 0.6f),
+        slideOutHorizontally(navTween()) { it },
+        targetContentZIndex = -1f, // màn đang rời đi nằm trên, trượt ra mép phải
+    )
+
+// Mỗi màn một nền giấy đặc: lúc trượt chồng nhau hai màn không nhìn xuyên qua nhau.
+private val PaperDecorator = NavEntryDecorator<NavKey> { entry ->
+    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) { entry.Content() }
+}
+
 private val BarHeight = 64.dp
 private val BarGap = 14.dp
 
@@ -159,9 +194,12 @@ fun AppNav(graph: AppGraph) {
                     onBack = { backStack.removeLastOrNull() },
                     modifier = Modifier.fillMaxSize().hazeSource(haze).background(MaterialTheme.colorScheme.background),
                     // mỗi entry một ViewModelStore: mở bài B không dùng lại ViewModel của bài A
-                    entryDecorators = listOf(rememberSaveableStateHolderNavEntryDecorator(), rememberViewModelStoreNavEntryDecorator()),
+                    transitionSpec = { pushSpec() },
+                    popTransitionSpec = { popSpec() },
+                    predictivePopTransitionSpec = { popSpec() },
+                    entryDecorators = listOf(rememberSaveableStateHolderNavEntryDecorator(), rememberViewModelStoreNavEntryDecorator(), PaperDecorator),
                     entryProvider = entryProvider {
-                        entry<Today> {
+                        entry<Today>(metadata = TabMeta) {
                             val s by graph.settings.settings.collectAsStateWithLifecycle(AppSettings())
                             TodayScreen(
                                 viewModel {
@@ -178,7 +216,7 @@ fun AppNav(graph: AppGraph) {
                                 notify = { NotifyCard(s.reminders) },
                             )
                         }
-                        entry<Learn> {
+                        entry<Learn>(metadata = TabMeta) {
                             val s by graph.settings.settings.collectAsStateWithLifecycle(AppSettings())
                             LearnScreen(
                                 viewModel { LearnViewModel(graph.db.curriculum(), graph.db.learner().observeAllProgress()) },
@@ -199,13 +237,13 @@ fun AppNav(graph: AppGraph) {
                                 onBack = { backStack.removeLastOrNull() },
                             )
                         }
-                        entry<Review> {
+                        entry<Review>(metadata = TabMeta) {
                             ReviewScreen(
                                 viewModel { ReviewViewModel(graph.reviews, { graph.lessons.load(it)?.body }, graph.scope, graph.db.learner().observeNextDue(), graph.log) },
                                 online = graph.net.online.collectAsStateWithLifecycle().value, api = graph.code, icon = CardsIcon,
                             )
                         }
-                        entry<Profile> {
+                        entry<Profile>(metadata = TabMeta) {
                             ProfileScreen(
                                 viewModel { ProfileViewModel(graph.db.curriculum(), graph.db.learner(), graph.log::dayOf, BuildConfig.SHOW_SAMPLES) },
                                 graph.supabase.auth.currentUserOrNull()?.email, onOpenSettings = { backStack.add(Settings) },

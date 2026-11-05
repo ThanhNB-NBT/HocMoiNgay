@@ -1,5 +1,8 @@
 package com.thanhnb.hocmoingay.core.ui
 
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.platform.LocalView
 import androidx.activity.compose.LocalActivity
@@ -185,8 +188,10 @@ private val SunGold = Color(0xFFF2B33D)
 
 /** Hiện ra: trồi 6dp + rõ dần trong 280 ms, phần tử thứ [index] trễ 35 ms mỗi bậc. */
 fun Modifier.rise(index: Int = 0): Modifier = composed {
-    val a = remember { Animatable(0f) }
-    LaunchedEffect(Unit) { delay(index * 35L); a.animateTo(1f, tween(280, easing = Settle)) }
+    // chỉ chạy lần đầu vào màn; quay lại màn (state được lưu theo entry) thì nội dung có sẵn, không nháy lại
+    var shown by rememberSaveable { mutableStateOf(false) }
+    val a = remember { Animatable(if (shown) 1f else 0f) }
+    LaunchedEffect(Unit) { if (!shown) { shown = true; delay(index * 35L); a.animateTo(1f, tween(280, easing = Settle)) } }
     graphicsLayer { alpha = a.value; translationY = (1 - a.value) * 6.dp.toPx() }
 }
 
