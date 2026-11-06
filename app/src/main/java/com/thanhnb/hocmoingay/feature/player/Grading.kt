@@ -22,6 +22,9 @@ fun reviewOk(picked: Set<Int>, issues: List<Issue>): Boolean {
 }
 /** Hoán vị cố định theo seed (`<bài>#<card>#<vị trí>`): xoay màn hay recompose không đổi thứ tự lựa chọn. */
 fun permutation(n: Int, seed: String): List<Int> = (0 until n).shuffled(Random(seed.hashCode()))
+/** Lựa chọn chỉ là nhãn "(A)"…"(D)" (câu tả nằm trong audio, kiểu TOEIC Part 1) thì giữ thứ tự, xáo sẽ ra (C) (A) (D) (B). */
+fun choiceOrder(choices: List<String>, seed: String): List<Int> =
+    if (choices.all { Regex("""\([A-Z]\)""").matches(it.trim()) }) choices.indices.toList() else permutation(choices.size, seed)
 /** Thẻ gap: không phân biệt hoa thường và dấu câu ("Mon." = "mon", "part-time" = "part time"). */
 fun gapNorm(s: String) = norm(s.lowercase().replace('-', ' ').replace(Regex("""[^\p{L}\p{N}\s]"""), ""))
 fun gapOk(given: List<String>, answers: List<List<String>>) =

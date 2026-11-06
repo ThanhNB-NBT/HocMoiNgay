@@ -51,6 +51,7 @@ import com.thanhnb.hocmoingay.core.net.ExplainFb
 import com.thanhnb.hocmoingay.core.theme.JetBrainsMono
 import com.thanhnb.hocmoingay.core.ui.PushButton
 import com.thanhnb.hocmoingay.core.ui.Pushable
+import com.thanhnb.hocmoingay.feature.player.choiceOrder
 import com.thanhnb.hocmoingay.feature.player.permutation
 import com.thanhnb.hocmoingay.feature.player.quizOk
 import kotlinx.coroutines.delay
@@ -124,7 +125,7 @@ fun ImageBlock(img: CardImage?) {
 /** Một câu trắc nghiệm (quiz, câu hỏi của listen/read): xáo theo [seed], `why` đi theo lựa chọn. */
 @Composable
 fun QuizBlock(q: String, choices: List<String>, answer: List<Int>, why: List<String>, seed: String, onDone: (Boolean) -> Unit) {
-    val perm = remember(seed) { permutation(choices.size, seed) }
+    val perm = remember(seed) { choiceOrder(choices, seed) }
     val multi = answer.size > 1
     var picked by remember { mutableStateOf(setOf<Int>()) }
     var checked by remember { mutableStateOf(false) }

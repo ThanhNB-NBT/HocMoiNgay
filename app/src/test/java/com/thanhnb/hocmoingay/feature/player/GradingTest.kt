@@ -47,5 +47,11 @@ class GradingTest {
         assertNotEquals((0 until 20).toList(), permutation(20, "bai#k"))
     }
 
+    @Test fun nhanChuCaiGiuThuTu() {
+        assertEquals(listOf(0, 1, 2, 3), choiceOrder(listOf("(A)", "(B)", "(C)", "(D)"), "bai#k"))
+        val c = (1..20).map { "lựa chọn $it" }
+        assertEquals(permutation(20, "bai#k"), choiceOrder(c, "bai#k"))
+    }
+
     @Test fun tachChoTrong() = assertEquals(listOf("t = ", "\nu ", " g"), blankParts("t = ___\nu ___ g"))
 }
