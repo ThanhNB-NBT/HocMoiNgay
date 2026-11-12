@@ -22,6 +22,7 @@ import dev.chrisbanes.haze.HazeInput
 import dev.chrisbanes.haze.rememberHazeState
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.glass.GlassStyle
+import dev.chrisbanes.haze.glass.OpticalSizeValue
 import dev.chrisbanes.haze.glass.hazeGlass
 import com.thanhnb.hocmoingay.feature.reminder.NotifyCard
 import com.thanhnb.hocmoingay.feature.profile.ProfileViewModel
@@ -57,6 +58,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.luminance
+import kotlinx.coroutines.launch
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
@@ -148,23 +159,50 @@ private val BarGap = 14.dp
 @Composable
 private fun TabBar(top: NavKey?, haze: HazeState, modifier: Modifier, onSelect: (NavKey) -> Unit) {
     val cs = MaterialTheme.colorScheme
-    val tint = cs.surfaceContainerLowest.copy(alpha = 0.6f)
-    val glass = remember(tint) { GlassStyle { shape(RoundedCornerShape(BarHeight / 2)); tint(tint) } }
+    val dark = cs.background.luminance() < 0.5f
+    val shape = RoundedCornerShape(BarHeight / 2)
+    // lớp phủ mỏng: kính còn trong để thấy khúc xạ, vẫn đủ đục để chữ tab đọc được trên nội dung cuộn phía sau
+    val tint = cs.surfaceContainerLowest.copy(alpha = if (dark) 0.45f else 0.4f)
+    // nhoè mạnh hơn mặc định: chữ của nội dung phía sau không còn đọc ra được để tranh với nhãn tab
+    val glass = remember(tint) { GlassStyle { shape(shape); tint(tint); optics { copy(blurRadius = OpticalSizeValue.Fixed(16.dp)) } } }
+    // Thấu kính trượt giữa các tab như giọt nước: mép đi trước chạy nhanh, mép sau theo chậm nên giọt giãn ra rồi co lại.
+    val idx = TABS.indexOf(top).coerceAtLeast(0)
+    val left = remember { Animatable(idx.toFloat()) }
+    val right = remember { Animatable(idx + 1f) }
+    LaunchedEffect(idx) {
+        val fwd = idx > left.value
+        val lead = spring<Float>(dampingRatio = 0.8f, stiffness = 420f)
+        val trail = spring<Float>(dampingRatio = 0.9f, stiffness = 170f)
+        launch { left.animateTo(idx.toFloat(), if (fwd) trail else lead) }
+        right.animateTo(idx + 1f, if (fwd) lead else trail)
+    }
+    val lens = cs.primary.copy(alpha = if (dark) 0.28f else 0.12f)
+    // viền sáng trên, mờ dưới: ánh đèn hắt vào mép kính
+    val rim = Brush.verticalGradient(listOf(Color.White.copy(alpha = if (dark) 0.3f else 0.95f), Color.White.copy(alpha = if (dark) 0.04f else 0.25f)))
     Row(
         modifier.navigationBarsPadding().padding(start = BarGap, end = BarGap, bottom = BarGap).fillMaxWidth().height(BarHeight)
+            .shadow(18.dp, shape, ambientColor = cs.primary.copy(alpha = 0.18f), spotColor = cs.primary.copy(alpha = 0.3f))
             .hazeGlass(HazeInput.Sources(haze), glass)
-            .border(1.dp, cs.surfaceContainerLowest.copy(alpha = 0.55f), CircleShape)
-            .padding(5.dp).selectableGroup(),
+            .border(1.dp, rim, shape)
+            .padding(5.dp)
+            .drawBehind {
+                val w = size.width / TABS.size
+                val o = Offset(left.value * w, 0f)
+                val s = Size((right.value - left.value) * w, size.height)
+                val r = CornerRadius(size.height / 2)
+                drawRoundRect(lens, o, s, r)
+                drawRoundRect(rim, o, s, r, style = Stroke(1.dp.toPx()))
+            }
+            .selectableGroup(),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         TABS.forEach { tab ->
             val sel = top == tab
             val bounce = remember { Animatable(1f) }
             LaunchedEffect(sel) { if (sel) { bounce.snapTo(0.82f); bounce.animateTo(1f, spring(dampingRatio = 0.45f, stiffness = 500f)) } }
-            val lens by animateColorAsState(if (sel) cs.secondaryContainer.copy(alpha = 0.8f) else cs.secondaryContainer.copy(alpha = 0f), tween(200), label = "thấu kính tab")
             val ink by animateColorAsState(if (sel) cs.primary else cs.onSurfaceVariant, tween(200), label = "màu tab")
             Column(
-                Modifier.weight(1f).fillMaxHeight().clip(CircleShape).background(lens)
+                Modifier.weight(1f).fillMaxHeight().clip(CircleShape)
                     .selectable(sel, remember { MutableInteractionSource() }, indication = null, role = Role.Tab, onClick = { onSelect(tab) }),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
